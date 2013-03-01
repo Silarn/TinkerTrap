@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 namespace AssemblyCSharp
 {
@@ -21,6 +22,19 @@ namespace AssemblyCSharp
 			setDir(3);
 			type = a;
 			gfx = b;
+		}
+		
+		public Obstacle (int a, GameObject b, double x, double y)
+		{
+			currDir = 3;
+			type = a;
+			gfx = b;
+			xtile = x;
+			ytile = y;
+			
+			posX = -xtile * LevelLoader.getTileW ();
+			posY = -ytile * LevelLoader.getTileW ();
+			setPos();
 		}
 	
 		public void setX (float x)
@@ -68,6 +82,19 @@ namespace AssemblyCSharp
 					os.frameIndex = 3;
 					break;
 				}
+			}
+		}
+		
+		public void setDepth(Dictionary<string, AssemblyCSharp.Tile> tileSheet)
+		{
+			OTSprite os = this.gfx.GetComponent<OTSprite>();
+			
+			foreach (var i in tileSheet) {
+			OTSprite tos = i.Value.gfx.GetComponent<OTSprite>();
+			if (tos.position.y > os.position.y || i.Value.walkable)
+				tos.depth = 1;
+			else
+				tos.depth = -1;
 			}
 		}
 	}

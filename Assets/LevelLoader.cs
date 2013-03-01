@@ -7,7 +7,7 @@ public class LevelLoader : MonoBehaviour {
 	public Transform prefab;
 	public int numberOfObjects;
 	
-	private float tileW = 64;
+	private static float tileW = 64;
 	
 	private int[,] map = new int[,] {{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7}, {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7}, {1, 0, 0, 0, 8, 8, 8, 0, 0, 0, 0, 7}, {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7}, {1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7}, {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7}, {1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 7}, {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7}, {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7}, {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7}, {1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 7}, {1, 1, 1, 1, 1, 5, 1, 1, 3, 1, 1, 7}, {1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 7}, {1, 1, 1, 0, 1, 1, 1, 1, 2, 1, 1, 7}, {1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 7}, {1, 1, 1, 0, 4, 0, 0, 0, 0, 1, 1, 7}, {1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 7}, {1, 1, 1, 2, 1, 1, 1, 1, 5, 1, 1, 7}, {1, 1, 1, 0, 0, 4, 0, 0, 0, 1, 1, 7}, {7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7}};
 	private int[,] obsMap = new int[,] {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
@@ -44,7 +44,7 @@ public class LevelLoader : MonoBehaviour {
 		
 		int mapWidth = map.GetLength(0);
 		int mapHeight = map.GetLength(1);
-		player = new AssemblyCSharp.Obstacle(0,OT.CreateObject("Bot1"));
+
 		OTSprite os;
 		Vector2 pos;
 		
@@ -110,8 +110,7 @@ public class LevelLoader : MonoBehaviour {
 				if (obsMap[j,i] != 0) {
 					switch (obsMap[j,i]) {
 						case 1:
-							player.xtile = j;
-							player.ytile = i;
+							player = new AssemblyCSharp.Obstacle(0,OT.CreateObject("Bot1"), j, i); //Creates and sets player on tile
 							break;
 						/*case 2:
 							gameBObs.push(new obstacle(2));
@@ -119,32 +118,33 @@ public class LevelLoader : MonoBehaviour {
 							gameBObs[gameBObs.length-1].ytile = j;
 							break;*/
 					}
+//					player.setDepth (gameB);
 				}
 				
 			}
 		}
 		//add the playeracter mc and insert at correct layer
-		os = player.gfx.GetComponent<OTSprite>();
+//		os = player.gfx.GetComponent<OTSprite>();
+//		
+//		player.posX = -player.xtile*tileW;
+//		player.posY = -player.ytile*tileW;
+//		//calculate position in isometric view
+//		player.xiso = (float)(player.posX-player.posY);
+//		player.yiso = (float)((player.posX+player.posY)/2);
+//		
+//		pos = new Vector2(player.xiso, player.yiso);
+//		os.position = pos;
+//		//calculate the tile where players center is
+//		player.xtile = -Math.Floor((player.posX)/32);
+//		player.ytile = -Math.Floor((player.posY)/32);
 		
-		player.posX = -player.xtile*tileW;
-		player.posY = -player.ytile*tileW;
-		//calculate position in isometric view
-		player.xiso = (float)(player.posX-player.posY);
-		player.yiso = (float)((player.posX+player.posY)/2);
-		
-		pos = new Vector2(player.xiso, player.yiso);
-		os.position = pos;
-		//calculate the tile where players center is
-		player.xtile = -Math.Floor((player.posX)/32);
-		player.ytile = -Math.Floor((player.posY)/32);
-		
-		foreach (var i in gameB) {
-			OTSprite tos = i.Value.gfx.GetComponent<OTSprite>();
-			if (tos.position.y > os.position.y || i.Value.walkable)
-				tos.depth = 1;
-			else
-				tos.depth = -1;
-		}
+//		foreach (var i in gameB) {
+//			OTSprite tos = i.Value.gfx.GetComponent<OTSprite>();
+//			if (tos.position.y > os.position.y || i.Value.walkable)
+//				tos.depth = 1;
+//			else
+//				tos.depth = -1;
+//		}
 	}
 	
 	void Update() {
@@ -200,7 +200,10 @@ public class LevelLoader : MonoBehaviour {
 			}
 		}
 	}
-		
+	
+	public static float getTileW()
+	{	return tileW;	}
+	
 	private void interact() {
 		AssemblyCSharp.Tile atTile = null;
 		
