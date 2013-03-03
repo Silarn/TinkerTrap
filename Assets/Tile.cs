@@ -59,9 +59,18 @@ namespace AssemblyCSharp
 				break;
 			}
 		}
+		
+		// Returns the name of the tile
+		public string myName()	{
+			string tileName = "tile_"+gridx+"_"+gridy;
+			return tileName;
+		}
 	
 		public void addConnection(int k, List<AssemblyCSharp.Tile> l) {
-			connections.Add (k,l);
+			if (!connections.ContainsKey(k))
+			connections.Add (k,l); 	//create key if it didn't exist
+			else 
+			connections[k] = l;		//replace list if key already exists
 		}
 		
 		// This function detects if the tile is considered active by looking at the powered state of all 'connections'
@@ -116,9 +125,11 @@ namespace AssemblyCSharp
 				break;
 			case 2:
 				bool occupied = false;
-				foreach (AssemblyCSharp.Obstacle i in objs)
-					if (i.xtile == gridx && i.ytile == gridy)
+				foreach (AssemblyCSharp.Obstacle i in objs)	
+					if (i.xtile == gridx && i.ytile == gridy)	{
 						occupied = true;
+						break;	//stop once any Obstacle matches Tile
+					}
 				if (locked == occupied) {
 					switch (locked) {
 						case true:
@@ -128,7 +139,7 @@ namespace AssemblyCSharp
 							//Off state graphic for pressure plate goes here.
 							break;
 					}
-					locked = !locked;
+					locked = !locked; /*Question: Won't this 'instantly' turn off the tile once LateUpdate runs again?  */
 					powered = !powered;
 				}
 				break;
