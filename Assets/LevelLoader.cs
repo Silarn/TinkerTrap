@@ -110,6 +110,10 @@ public class LevelLoader : MonoBehaviour {
 		}
 	}
 	
+	void OnGUI () {
+		GUI.Box(new Rect(10,10,150,40), "Player tile: "+player.onTile());
+	}
+	
 	void Update() {
 		
 		//Directional movement. Should this be limited to one direction at a time?
@@ -138,7 +142,7 @@ public class LevelLoader : MonoBehaviour {
 		
 		// Scan for player interaction. This probably needs updating for different bot abilites.
 		
-		if (Input.GetKey(KeyCode.Space))
+		if (Input.GetKeyDown(KeyCode.Space))
 		{
 			interact();
 		}

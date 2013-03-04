@@ -36,6 +36,12 @@ namespace AssemblyCSharp
 			posY = -ytile * LevelLoader.getTileW ();
 			setPos();
 		}
+		
+		// Returns the name of the Tile currently occupied by the Obstacle
+		public string onTile()	{
+			string tileName = "tile_"+xtile+"_"+ytile;
+			return tileName;
+		}
 	
 		public void setX (float x)
 		{
