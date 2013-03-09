@@ -3,6 +3,7 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.Xml;
+using System.Text.RegularExpressions;
 
 public class EditorScript : MonoBehaviour {
 	
@@ -19,6 +20,9 @@ public class EditorScript : MonoBehaviour {
 	public GUIStyle passiveButton;
 	public GUISkin mainSkin;
 	public Texture2D[] buttonGfx;
+	
+	public string connections;
+	public string lockGroups;
 	
 	// Use this for initialization
 	void Start () {
@@ -61,6 +65,8 @@ public class EditorScript : MonoBehaviour {
 			if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
 				SetTypeByUI(map[selectY][selectX]);
 				SetGraphics(map[selectY][selectX]);
+				SetConnections(map[selectY][selectX]);
+				SetLockGroups(map[selectY][selectX]);
 			}
 		}
 	}
@@ -129,6 +135,18 @@ public class EditorScript : MonoBehaviour {
 		}
 	}
 	
+	private void SetConnections (GameObject a){
+	
+		if (connections.Length > 0)
+			a.GetComponent<EditorTile>().setConnections(connections);	
+	}
+	
+	private void SetLockGroups (GameObject a){
+	
+		if (lockGroups.Length > 0)
+			a.GetComponent<EditorTile>().setLockGroups(lockGroups);	
+	}
+	
 	private void WriteXML()
     {
 		XmlWriterSettings settings = new XmlWriterSettings();
@@ -146,12 +164,12 @@ public class EditorScript : MonoBehaviour {
 					writer.WriteElementString ("obs",j.GetComponent<EditorTile>().obsType.ToString ());
 					writer.WriteStartElement ("connections");
 					foreach (int cons in j.GetComponent<EditorTile>().consList) {
-						writer.WriteValue (cons);
+						writer.WriteElementString ("int", cons.ToString());
 					}
 					writer.WriteEndElement ();
 					writer.WriteStartElement ("locks");
 					foreach (int locks in j.GetComponent<EditorTile>().locksList) {
-						writer.WriteValue (locks);
+						writer.WriteElementString ("int", locks.ToString());
 					}
 					writer.WriteEndElement ();
 					writer.WriteEndElement ();
@@ -207,8 +225,14 @@ public class EditorScript : MonoBehaviour {
 						read.Read ();
 						map[j][i].GetComponent<EditorTile>().obsType = int.Parse (read.Value);
 						break;
-					//case "connections":
-					//case "locks":
+					case "connections":
+						while (read.MoveToNextAttribute())
+							map[j][i].GetComponent<EditorTile>().setElementConnection(read.ReadContentAsInt());
+						break;
+					case "locks":
+						while (read.MoveToNextAttribute())
+							map[j][i].GetComponent<EditorTile>().setElementLock(read.ReadContentAsInt());
+						break;
 					}
 				}
 			}
@@ -277,6 +301,14 @@ public class EditorScript : MonoBehaviour {
 				activeSelection = i;
 			}
 		}
+		
+		GUI.Label (new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+200,90,30), "Connections:");
+		connections = GUI.TextField(new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+240,90,30),connections);
+		connections = Regex.Replace(connections, @"[^,0-9]", "");
+		
+		GUI.Label (new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+280,150,30), "Lock Groups:");
+		lockGroups = GUI.TextField(new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+320,90,30),lockGroups);
+		lockGroups = Regex.Replace(lockGroups, @"[^,0-9]", "");
 		
 		if (GUI.Button (new Rect(200,5,90,60), "Save")) {
 			WriteXML ();

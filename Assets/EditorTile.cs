@@ -73,9 +73,13 @@ public class EditorTile : MonoBehaviour
 		get { return tileData.connections; }
 	}
 	
+	public void setElementConnection (int i) {
+		tileData.connections.Add(i);
+	}
+	
     public void setConnections(string text)
     {
-        string[] splitText = text.Split(null);
+        string[] splitText = text.Split(',');
         if (text.Length > 0)
             tileData.connections.Clear();
         foreach (string str in splitText)
@@ -87,9 +91,13 @@ public class EditorTile : MonoBehaviour
 		get { return tileData.lockGroups; }
 	}
 	
+	public void setElementLock (int i) {
+		tileData.lockGroups.Add(i);
+	}
+	
     public void setLockGroups(string text)
     {
-        string[] splitText = text.Split(null);
+        string[] splitText = text.Split(',');
         if (text.Length > 0)
             tileData.lockGroups.Clear();
         foreach (string str in splitText)
