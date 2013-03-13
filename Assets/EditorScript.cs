@@ -62,7 +62,7 @@ public class EditorScript : MonoBehaviour {
 		SetGrid();
 		
 		// Make some content for the popup list
-//		consDropdown[0] = new GUIContent("1");
+//		consDropdown = new GUIContent[0];
 //		
 //		locksDropdown = new GUIContent[0];
 	}
@@ -149,22 +149,6 @@ public class EditorScript : MonoBehaviour {
 		}
 	}
 	
-	private void checkLooseEnds()
-	{
-		if (activeSelection == 20)
-		{
-			
-		}
-		else if (activeSelection == 21)
-		{
-			
-			
-		}
-		foreach (List<GameObject> g in map) {
-		
-		}
-	}
-	
 	private void SetGrid() {
 		for (int i = 0; i < gridH; i++) {
 			if (map.Count == i) {
@@ -224,12 +208,9 @@ public class EditorScript : MonoBehaviour {
 				validAnchor = true;
 				anchorYX = map[selectY][selectX];
 				anchor = ReturnTileCenter(map[selectY][selectX].transform.position);
-//				if (activeSelection == 20 && connectionEntry != 0)
-//					DrawConnections(connectionEntry);
-//				else if (activeSelection == 21 && lockEntry != 0)
-//					DrawLocks(lockEntry);
 			}
 		}
+		// Deletes node on right click. Lone nodes remain.
 		if (activeSelection >= 20 && Input.GetMouseButtonDown (1) && !guiError && !loadFile && !saveFile && !guiInput)
 		{
 			Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
@@ -263,10 +244,9 @@ public class EditorScript : MonoBehaviour {
 			int selectY = (int)(Math.Floor (mouseLocation.y/-32));
 			validAnchor = false;
 			if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
-				DrawVerticies(anchor,ReturnTileCenter(map[selectY][selectX].transform.position));
-				//Set the connection (20) or lockgroup (21)
-				if (activeSelection == 20 && map[selectY][selectX] != anchorYX)
-				{	if (!map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry))
+				// Set the connection (20) or lockgroup (21)
+				if (activeSelection == 20 && map[selectY][selectX] != anchorYX) // Don't add nodes if they start/end on same tile
+				{	if (!map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry)) //Don't add node if it already exists
 						map[selectY][selectX].GetComponent<EditorTile>().consIn.Add(connectionEntry);
 					if (!anchorYX.GetComponent<EditorTile>().consOut.Contains(connectionEntry))
 						anchorYX.GetComponent<EditorTile>().consOut.Add(connectionEntry);
@@ -281,9 +261,7 @@ public class EditorScript : MonoBehaviour {
 					DrawLocks(lockEntry);
 				}
 			}
-//			else{
-				DrawVerticies(anchor,anchor); // Removing mouse line from view
-//			}
+			DrawVerticies(anchor,anchor); // Removing mouse line from view
 		}
 	}
 	
