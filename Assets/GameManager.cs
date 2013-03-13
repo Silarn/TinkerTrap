@@ -35,14 +35,14 @@ public class GameManager : MonoBehaviour {
 	private float timeleft; // Left time for current interval
 	private float fps = 30;
 	
-	private List<Obstacle> players = new List<Obstacle>();
+	private List<Player> players = new List<Player>();
 	private int activeBot = 1;
 	
 	void Start () {
 		timeleft = updateInterval;
-		players.Add (new Obstacle(1)); // Webelo (Red, Lifter)
-		players.Add (new Obstacle(2)); // Hob (Yellow, Hoverer)
-		players.Add (new Obstacle(3)); // Hisco (Green, Wheelie)
+		players.Add (new Bot1()); // Webelo (Red, Lifter)
+		players.Add (new Bot2()); // Hob (Yellow, Hoverer)
+		players.Add (new Bot3()); // Hisco (Green, Wheelie)
 	}
 	
 	void TopMenu() {
@@ -227,7 +227,7 @@ public class GameManager : MonoBehaviour {
 							break;
 						case 4:
 							Debug.Log ("Box found!");
-							gameObs.Add (new Obstacle(4, i, j));
+							gameObs.Add (new Box(4, i, j));
 							break;
 						}
 						break;
@@ -348,10 +348,8 @@ public class GameManager : MonoBehaviour {
 			if (!paused) {
 				
 				//Directional movement. Should this be limited to one direction at a time?
-				if (Input.GetKeyDown (KeyCode.E) && !players[activeBot-1].grabbing) {
-					TryGrab();
-				} else if (Input.GetKeyDown (KeyCode.E) && players[activeBot-1].grabbing) {
-					players[activeBot-1].Release();
+				if (Input.GetKeyDown (KeyCode.E)) {
+					DoPrimary ();
 				}
 				
 				if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) 
@@ -455,8 +453,7 @@ public class GameManager : MonoBehaviour {
 	public static float getTileW()
 	{	return tileW;	}
 	
-	private void interact() {
-		Tile atTile = null;
+	private Tile FacingTile() {
 		string tarTile = "";
 		if (players[activeBot-1].currDir == 0) {
 			tarTile = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].ytile-1);
@@ -471,25 +468,24 @@ public class GameManager : MonoBehaviour {
 			tarTile = "tile_"+(int)(players[activeBot-1].xtile+1)+"_"+(int)(players[activeBot-1].ytile);
 		}
 		
-		/*if (atTile.lockGrou[ {0] != 0) {
-			for (var i: int = 0; i < atTile.lockGroup.length; i++) {
-				for (var j: int = 0; j < gameBLoc[ {String(atTile.lockGrou[ {i])].length; j++) {
-					if (gameBLoc[ {String(atTile.lockGrou[ {i])]new int[] {j].locked)
-						return;
-				}
-			}
-		}*/
-		
-		atTile = gameB[tarTile];
-		
-		if (atTile != null)
-			atTile.interact();
+		if (gameB.ContainsKey (tarTile))
+			return gameB[tarTile];
+		return null;
+	}
+	
+	private void interact() {
+		Tile target = FacingTile ();
+		if (target != null)
+			target.interact();
 	}
 	
 	// Check if the active player can grab an obstacle,
 	// if so, grab it!
 	
-	private void TryGrab() {
+	private void DoPrimary() {
+		Tile target = FacingTile ();
+		if (target == null)
+			return;
 		getMyCorners(players[activeBot-1], players[activeBot-1].posX, players[activeBot-1].posY);
 		foreach (Obstacle iob in gameObs) {
 			if (iob != players[activeBot-1]) {
@@ -498,7 +494,7 @@ public class GameManager : MonoBehaviour {
 					getMyCorners (iob,iob.posX,iob.posY+5);
 					if ( players[activeBot-1].upYPos < iob.downYPos && players[activeBot-1].downYPos > iob.upYPos &&
 						players[activeBot-1].leftXPos < iob.rightXPos && players[activeBot-1].rightXPos > iob.leftXPos) {
-						players[activeBot-1].Grab(iob);
+						players[activeBot-1].primary(target, iob);
 						return;
 					}
 					break;
@@ -506,7 +502,7 @@ public class GameManager : MonoBehaviour {
 					getMyCorners (iob,iob.posX-5,iob.posY);
 					if ( players[activeBot-1].rightXPos > iob.leftXPos && players[activeBot-1].leftXPos < iob.rightXPos &&
 						players[activeBot-1].upYPos < iob.downYPos && players[activeBot-1].downYPos > iob.upYPos) {
-						players[activeBot-1].Grab(iob);
+						players[activeBot-1].primary(target, iob);
 						return;
 					}
 					break;
@@ -514,7 +510,7 @@ public class GameManager : MonoBehaviour {
 					getMyCorners (iob,iob.posX,iob.posY-5);
 					if ( players[activeBot-1].downYPos > iob.upYPos && players[activeBot-1].upYPos < iob.downYPos &&
 						players[activeBot-1].leftXPos < iob.rightXPos && players[activeBot-1].rightXPos > iob.leftXPos) {
-						players[activeBot-1].Grab(iob);
+						players[activeBot-1].primary(target, iob);
 						return;
 					}
 					break;
@@ -522,11 +518,12 @@ public class GameManager : MonoBehaviour {
 					getMyCorners (iob,iob.posX+5,iob.posY);
 					if ( players[activeBot-1].leftXPos < iob.rightXPos && players[activeBot-1].rightXPos > iob.leftXPos &&
 						players[activeBot-1].upYPos < iob.downYPos && players[activeBot-1].downYPos > iob.upYPos) {
-						players[activeBot-1].Grab(iob);
+						players[activeBot-1].primary(target, iob);
 						return;
 					}
 					break;
 				}
+				players[activeBot-1].primary(target);
 			}
 		}
 	}
@@ -590,8 +587,9 @@ public class GameManager : MonoBehaviour {
 						}
 					}
 				}
-				if (tob.grabbing)
-					speedAdj = moveChar (tob.grabbed, speedAdj/2, dirx, diry);
+				if (tob.GetType () == typeof(Bot1))
+					if (((Bot1)tob).grabbing)
+						speedAdj = moveChar (((Bot1)tob).grabbed, speedAdj/2, dirx, diry);
 				tob.setY((float)(tob.posY+speedAdj*diry));
 			}
 			else
@@ -600,8 +598,9 @@ public class GameManager : MonoBehaviour {
 				double yStart = tob.posY;
 				tob.setY(((float)((tob.ytile)*tileW)));
 				double yShift = yStart-tob.posY;
-				if (tob.grabbing)
-					moveChar (tob.grabbed, yShift, dirx, diry);
+				if (tob.GetType () == typeof(Bot1))
+					if (((Bot1)tob).grabbing)
+						moveChar (((Bot1)tob).grabbed, yShift, dirx, diry);
 				speedAdj = 0;
 			}
 		}
@@ -619,8 +618,9 @@ public class GameManager : MonoBehaviour {
 						}
 					}
 				}
-				if (tob.grabbing)
-					speedAdj = moveChar (tob.grabbed, speedAdj/2, dirx, diry);
+				if (tob.GetType () == typeof(Bot1))
+					if (((Bot1)tob).grabbing)
+						speedAdj = moveChar (((Bot1)tob).grabbed, speedAdj/2, dirx, diry);
 				tob.setY((float)(tob.posY+speedAdj*diry));
 			}
 			else
@@ -628,8 +628,9 @@ public class GameManager : MonoBehaviour {
 				double yStart = tob.posY;
 				tob.setY(((float)((tob.ytile+1)*tileW-(tob.width/2))));
 				double yShift = tob.posY-yStart;
-				if (tob.grabbing)
-					moveChar (tob.grabbed, yShift, dirx, diry);
+				if (tob.GetType () == typeof(Bot1))
+					if (((Bot1)tob).grabbing)
+						moveChar (((Bot1)tob).grabbed, yShift, dirx, diry);
 				speedAdj = 0;
 			}
 		}
@@ -650,8 +651,9 @@ public class GameManager : MonoBehaviour {
 						}
 					}
 				}
-				if (tob.grabbing)
-					speedAdj = moveChar (tob.grabbed, speedAdj/2, dirx, diry);
+				if (tob.GetType () == typeof(Bot1))
+					if (((Bot1)tob).grabbing)
+						speedAdj = moveChar (((Bot1)tob).grabbed, speedAdj/2, dirx, diry);
 				tob.setX((float)(tob.posX+speedAdj*dirx));
 			}
 			else
@@ -659,8 +661,9 @@ public class GameManager : MonoBehaviour {
 				double xStart = tob.posX;
 				tob.setX(((float)(tob.xtile*tileW)));
 				double xShift = xStart-tob.posX;
-				if (tob.grabbing)
-					moveChar (tob.grabbed, xShift, dirx, diry);
+				if (tob.GetType () == typeof(Bot1))
+					if (((Bot1)tob).grabbing)
+						moveChar (((Bot1)tob).grabbed, xShift, dirx, diry);
 				speedAdj = 0;
 			}
 		}
@@ -678,8 +681,9 @@ public class GameManager : MonoBehaviour {
 						}
 					}
 				}
-				if (tob.grabbing)
-					speedAdj = moveChar (tob.grabbed, speedAdj/2, dirx, diry);
+				if (tob.GetType () == typeof(Bot1))
+					if (((Bot1)tob).grabbing)
+						speedAdj = moveChar (((Bot1)tob).grabbed, speedAdj/2, dirx, diry);
 				tob.setX((float)(tob.posX+speedAdj*dirx));
 			}
 			else
@@ -687,8 +691,9 @@ public class GameManager : MonoBehaviour {
 				double xStart = tob.posX;
 				tob.setX(((float)((tob.xtile+1)*tileW-(tob.width/2))));
 				double xShift = tob.posX-xStart;
-				if (tob.grabbing)
-					moveChar (tob.grabbed, xShift, dirx, diry);
+				if (tob.GetType () == typeof(Bot1))
+					if (((Bot1)tob).grabbing)
+						moveChar (((Bot1)tob).grabbed, xShift, dirx, diry);
 				speedAdj = 0;
 			}
 		}
