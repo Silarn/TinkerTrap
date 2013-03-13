@@ -44,8 +44,8 @@ public class EditorScript : MonoBehaviour {
 	private bool showLockList = false;
 	private int connectionEntry = 0;
 	private int lockEntry = 0;
-	private GUIContent[] consDropdown;
-	private GUIContent[] locksDropdown;
+	private GUIContent[] consDropdown = {new GUIContent("1"),new GUIContent("2"),new GUIContent("3")};
+	private GUIContent[] locksDropdown = {new GUIContent("1"),new GUIContent("2"),new GUIContent("3")};
 	private bool conPicked = false;
 	private bool lockPicked = false;
 	
@@ -53,6 +53,7 @@ public class EditorScript : MonoBehaviour {
 	
 	private bool validAnchor = false; // Control variable to help set tracer line
 	private Vector3 anchor;
+	private GameObject anchorYX;
 	
 	private GameObject line;
 	// Use this for initialization
@@ -61,9 +62,9 @@ public class EditorScript : MonoBehaviour {
 		SetGrid();
 		
 		// Make some content for the popup list
-		consDropdown = new GUIContent[0];
-		
-		locksDropdown = new GUIContent[0];
+//		consDropdown[0] = new GUIContent("1");
+//		
+//		locksDropdown = new GUIContent[0];
 	}
 	
 	private Vector3 ReturnTileCenter (Vector3 v)
@@ -78,15 +79,14 @@ public class EditorScript : MonoBehaviour {
 		line.GetComponent<LineRenderer>().SetPosition(1, b);
 	}
 	
-	
 	private void DrawConnections(int num)
 	{
 		foreach (List<GameObject> g in map)
 		{
 			foreach (GameObject o in g)
 			{
-				// Checking all tiles for num, using consList
-				if ( o.GetComponent<EditorTile>().consOut.Contains(num))
+				// Checking all tiles for num, using consOut
+				if ( o.GetComponent<EditorTile>().consIn.Contains(num))
 				{
 					int count = 0;
 					o.GetComponent<LineRenderer>().SetVertexCount(3);
@@ -95,8 +95,8 @@ public class EditorScript : MonoBehaviour {
 					{
 						foreach (GameObject o2 in g2)
 						{
-							// Check all tiles again for num, using consList
-							if (o2.GetComponent<EditorTile>().consIn.Contains(num))
+							// Check all tiles again for num, using consIn
+							if (o2.GetComponent<EditorTile>().consOut.Contains(num))
 							{
 								// With another matching tile, set another LineRender point, and then return to source tile again
 								o.GetComponent<LineRenderer>().SetVertexCount(count + 3);
@@ -111,6 +111,57 @@ public class EditorScript : MonoBehaviour {
 					o.GetComponent<LineRenderer>().SetPosition(0,o.transform.position);
 				}
 			}
+		}
+	}
+	
+	private void DrawLocks(int num)
+	{
+		foreach (List<GameObject> g in map)
+		{
+			foreach (GameObject o in g)
+			{
+				// Checking all tiles for num, using locksOut
+				if ( o.GetComponent<EditorTile>().locksIn.Contains(num))
+				{
+					int count = 0;
+					o.GetComponent<LineRenderer>().SetVertexCount(3);
+					o.GetComponent<LineRenderer>().SetPosition(count,ReturnTileCenter(o.transform.position));
+					foreach (List<GameObject> g2 in map)
+					{
+						foreach (GameObject o2 in g2)
+						{
+							// Check all tiles again for num, using locksin
+							if (o2.GetComponent<EditorTile>().locksOut.Contains(num))
+							{
+								// With another matching tile, set another LineRender point, and then return to source tile again
+								o.GetComponent<LineRenderer>().SetVertexCount(count + 3);
+								o.GetComponent<LineRenderer>().SetPosition(++count,ReturnTileCenter(o2.transform.position));
+								o.GetComponent<LineRenderer>().SetPosition(++count,ReturnTileCenter(o.transform.position));
+							}
+						}
+					}
+				}
+				else {
+					o.GetComponent<LineRenderer>().SetVertexCount(1);
+					o.GetComponent<LineRenderer>().SetPosition(0,o.transform.position);
+				}
+			}
+		}
+	}
+	
+	private void checkLooseEnds()
+	{
+		if (activeSelection == 20)
+		{
+			
+		}
+		else if (activeSelection == 21)
+		{
+			
+			
+		}
+		foreach (List<GameObject> g in map) {
+		
 		}
 	}
 	
@@ -165,35 +216,47 @@ public class EditorScript : MonoBehaviour {
 				SetTypeByDraw(map[selectY][selectX]);
 				SetGraphics(map[selectY][selectX], mapObs[selectY][selectX]);
 			}
-		}/* else if (Input.GetMouseButtonDown (0) && !guiError && !loadFile && !saveFile && !guiInput) {
+		} else if (Input.GetMouseButtonDown (0) && !guiError && !loadFile && !saveFile && !guiInput) {
 			Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
 			int selectX = (int)(Math.Floor (mouseLocation.x/32));
 			int selectY = (int)(Math.Floor (mouseLocation.y/-32));
 			if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
 				validAnchor = true;
-				
+				anchorYX = map[selectY][selectX];
 				anchor = ReturnTileCenter(map[selectY][selectX].transform.position);
-				DrawConnections(1); //Test tiles with connection 1
+//				if (activeSelection == 20 && connectionEntry != 0)
+//					DrawConnections(connectionEntry);
+//				else if (activeSelection == 21 && lockEntry != 0)
+//					DrawLocks(lockEntry);
 			}
 		}
-		if (Input.GetMouseButtonDown (1) && !guiError && !loadFile && !saveFile && !guiInput)
+		if (activeSelection >= 20 && Input.GetMouseButtonDown (1) && !guiError && !loadFile && !saveFile && !guiInput)
 		{
 			Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
 			int selectX = (int)(Math.Floor (mouseLocation.x/32));
 			int selectY = (int)(Math.Floor (mouseLocation.y/-32));
 			if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
-				validAnchor = true;
-				anchor = ReturnTileCenter(map[selectY][selectX].transform.position);
-				if (connectionEntry != null)
-					DrawConnections(connectionEntry); //Test tiles with connection 1
+				if (activeSelection == 20) {
+					if (map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry))
+						map[selectY][selectX].GetComponent<EditorTile>().consIn.Remove(connectionEntry);
+					if (map[selectY][selectX].GetComponent<EditorTile>().consOut.Contains(connectionEntry))
+						map[selectY][selectX].GetComponent<EditorTile>().consOut.Remove(connectionEntry);
+					DrawConnections(connectionEntry);
+				} else {
+					if (map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry))
+						map[selectY][selectX].GetComponent<EditorTile>().locksIn.Remove(lockEntry);
+					if (map[selectY][selectX].GetComponent<EditorTile>().locksOut.Contains(lockEntry))
+						map[selectY][selectX].GetComponent<EditorTile>().locksOut.Remove(lockEntry);
+					DrawLocks(lockEntry);
+				}
 			}
 		}
-		if (Input.GetMouseButton (1) && !guiError && !loadFile && !saveFile && !guiInput && validAnchor == true)
+		if (activeSelection >= 20 && Input.GetMouseButton (0) && !guiError && !loadFile && !saveFile && !guiInput && validAnchor == true)
 		{
 			Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
 			DrawVerticies(anchor,mouseLocation);
 		}
-		if (Input.GetMouseButtonUp (1) && !guiError && !loadFile && !saveFile && !guiInput)
+		if (activeSelection >= 20 && Input.GetMouseButtonUp (0) && !guiError && !loadFile && !saveFile && !guiInput)
 		{
 			Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
 			int selectX = (int)(Math.Floor (mouseLocation.x/32));
@@ -201,11 +264,27 @@ public class EditorScript : MonoBehaviour {
 			validAnchor = false;
 			if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
 				DrawVerticies(anchor,ReturnTileCenter(map[selectY][selectX].transform.position));
+				//Set the connection (20) or lockgroup (21)
+				if (activeSelection == 20 && map[selectY][selectX] != anchorYX)
+				{	if (!map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry))
+						map[selectY][selectX].GetComponent<EditorTile>().consIn.Add(connectionEntry);
+					if (!anchorYX.GetComponent<EditorTile>().consOut.Contains(connectionEntry))
+						anchorYX.GetComponent<EditorTile>().consOut.Add(connectionEntry);
+					DrawConnections(connectionEntry);
+				} 
+				else if (activeSelection == 21 && map[selectY][selectX] != anchorYX)
+				{	if (!map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry))
+						map[selectY][selectX].GetComponent<EditorTile>().locksIn.Add(lockEntry);
+					if (!anchorYX.GetComponent<EditorTile>().locksOut.Contains(lockEntry))
+						anchorYX.GetComponent<EditorTile>().locksOut.Add (lockEntry);
+					
+					DrawLocks(lockEntry);
+				}
 			}
-			else{
-				DrawVerticies(anchor,anchor); // Removing line from view
-			}
-		}*/
+//			else{
+				DrawVerticies(anchor,anchor); // Removing mouse line from view
+//			}
+		}
 	}
 	
 	void LateUpdate () {
@@ -631,26 +710,29 @@ public class EditorScript : MonoBehaviour {
 		
 		GUI.Label (new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+200,90,30), "Connections:");
 	
-		if (Popup.List (new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+240,90,30), ref showConList, ref connectionEntry, new GUIContent("Select one!"), consDropdown, activeButton)) {
+		if (Popup.List (new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+240,90,30), ref showConList, ref connectionEntry, new GUIContent(connectionEntry.ToString()), consDropdown, activeButton)) {
 			conPicked = true;
 			connectionEntry = int.Parse (consDropdown[connectionEntry].text);
 			DrawConnections (connectionEntry);
+			activeSelection = 20;
 		} else
 			conPicked = false;
-			
-		if (GUI.Button (new Rect(Screen.width-(32*2)-80,(32+5)*(buttonGfx.Length/2)+240,40,30), "Add"))
-			activeSelection = 20;
-		
+	
+		if (GUI.Button (new Rect(Screen.width-(32*2)-80,(32+5)*(buttonGfx.Length/2)+240,40,30), "Add")) {
+//			activeSelection = 20;
+		}
 		GUI.Label (new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+280,150,30), "Lock Groups:");
 		
-		if (Popup.List (new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+320,90,30), ref showLockList, ref lockEntry, new GUIContent("Select one!"), locksDropdown, activeButton)) {
+		if (Popup.List (new Rect(Screen.width-(32*2)-40,(32+5)*(buttonGfx.Length/2)+320,90,30), ref showLockList, ref lockEntry, new GUIContent(lockEntry.ToString()), locksDropdown, activeButton)) {
 			lockPicked = true;
 			lockEntry = int.Parse (locksDropdown[lockEntry].text);
+			DrawLocks(lockEntry);
+			activeSelection = 21;
 		} else
 			lockPicked = false;
 		
 		if (GUI.Button (new Rect(Screen.width-(32*2)-80,(32+5)*(buttonGfx.Length/2)+320,40,30), "Add"))
-			activeSelection = 21;
+//			activeSelection = 21;
 		
 		if (loadFile) {
 			browser.OnGUI ();
