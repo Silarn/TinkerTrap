@@ -47,13 +47,14 @@ public class EditorScript : MonoBehaviour {
 	private bool showLockList = false;
 	private int connectionEntry = 0;
 	private int lockEntry = 0;
-	private GUIContent[] consDropdown = {new GUIContent("1"),new GUIContent("2"),new GUIContent("3")};
-	private GUIContent[] locksDropdown = {new GUIContent("1"),new GUIContent("2"),new GUIContent("3")};
+	private GUIContent[] consDropdown = {new GUIContent("1")};
+	private GUIContent[] locksDropdown = {new GUIContent("1")};
 	private bool conPicked = false;
 	private bool lockPicked = false;
 	
 	// Drawing lines
 	
+	private bool mouse0Active = true;
 	private bool validAnchor = false; // Control variable to help set tracer line
 	private Vector3 anchor;
 	private GameObject anchorYX;
@@ -62,12 +63,12 @@ public class EditorScript : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		line = GameObject.Find ("mouseLine");
+		line.GetComponent<LineRenderer>().SetColors(Color.white, Color.blue);
 		SetGrid();
 		
-		// Make some content for the popup list
-//		consDropdown = new GUIContent[0];
-//		
-//		locksDropdown = new GUIContent[0];
+		// Sync active lists to dropdown content
+		activeCons.Add(1);
+		activeLocks.Add(1);
 	}
 	
 	private Vector3 ReturnTileCenter (Vector3 v)
@@ -78,12 +79,32 @@ public class EditorScript : MonoBehaviour {
 	
 	private void DrawVerticies(Vector3 a, Vector3 b)
 	{
+		line.GetComponent<LineRenderer>().SetVertexCount(2);
 		line.GetComponent<LineRenderer>().SetPosition(0, a);
 		line.GetComponent<LineRenderer>().SetPosition(1, b);
 	}
 	
+	private void DragBox(Vector3 a, Vector3 c)
+	{	/* a b
+		 * d c
+		 */
+		line.GetComponent<LineRenderer>().SetVertexCount(5);
+		line.GetComponent<LineRenderer>().SetPosition(0,a);
+		
+		Vector3 b = new Vector3(c.x,a.y,a.z);
+		line.GetComponent<LineRenderer>().SetPosition(1,b);
+		
+		line.GetComponent<LineRenderer>().SetPosition(2,c);
+		
+		Vector3 d = new Vector3(a.x,c.y,a.z);
+		line.GetComponent<LineRenderer>().SetPosition(3,d);
+		
+		line.GetComponent<LineRenderer>().SetPosition(4,a);
+	}
+	
 	private void DrawConnections(int num)
 	{
+		bool outFound = false;
 		foreach (List<GameObject> g in map)
 		{
 			foreach (GameObject o in g)
@@ -92,6 +113,7 @@ public class EditorScript : MonoBehaviour {
 				// Checking all tiles for num, using consOut
 				if ( o.GetComponent<EditorTile>().consOut.Contains(num))
 				{
+					outFound = true;
 					int count = 0;
 					o.GetComponent<LineRenderer>().SetVertexCount(3);
 					o.GetComponent<LineRenderer>().SetPosition(count,ReturnTileCenter(o.transform.position));
@@ -109,6 +131,10 @@ public class EditorScript : MonoBehaviour {
 							}
 						}
 					}
+					if (count == 0) {
+						o.GetComponent<LineRenderer>().SetVertexCount(0);
+						o.GetComponent<EditorTile>().consOut.Remove(num); // Removes lone Outs
+					}
 				}
 				else {
 					o.GetComponent<LineRenderer>().SetVertexCount(1);
@@ -116,10 +142,21 @@ public class EditorScript : MonoBehaviour {
 				}
 			}
 		}
+		if (!outFound) { // If no Outs found, check for and remove any Ins
+			foreach (List<GameObject> g in map)
+			{
+			foreach (GameObject o in g)
+				{
+					if (o.GetComponent<EditorTile>().consIn.Contains(num))
+						o.GetComponent<EditorTile>().consIn.Remove (num);
+				}
+			}
+		}
 	}
 	
 	private void DrawLocks(int num)
 	{
+		bool outFound = false;
 		foreach (List<GameObject> g in map)
 		{
 			foreach (GameObject o in g)
@@ -128,6 +165,7 @@ public class EditorScript : MonoBehaviour {
 				// Checking all tiles for num, using locksOut
 				if ( o.GetComponent<EditorTile>().locksOut.Contains(num))
 				{
+					outFound = true;
 					int count = 0;
 					o.GetComponent<LineRenderer>().SetVertexCount(3);
 					o.GetComponent<LineRenderer>().SetPosition(count,ReturnTileCenter(o.transform.position));
@@ -145,10 +183,24 @@ public class EditorScript : MonoBehaviour {
 							}
 						}
 					}
+					if (count == 0) {
+						o.GetComponent<LineRenderer>().SetVertexCount(0);
+						o.GetComponent<EditorTile>().locksOut.Remove(num); // Removes lone Outs
+					}
 				}
 				else {
 					o.GetComponent<LineRenderer>().SetVertexCount(1);
 					o.GetComponent<LineRenderer>().SetPosition(0,o.transform.position);
+				}
+			}
+		}
+		if (!outFound) { // If no Outs found, check for and remove any Ins
+			foreach (List<GameObject> g in map)
+			{
+			foreach (GameObject o in g)
+				{
+					if (o.GetComponent<EditorTile>().locksIn.Contains(num))
+						o.GetComponent<EditorTile>().locksIn.Remove (num);
 				}
 			}
 		}
@@ -228,39 +280,47 @@ public class EditorScript : MonoBehaviour {
 			int selectX = (int)(Math.Floor (mouseLocation.x/32));
 			int selectY = (int)(Math.Floor (mouseLocation.y/-32));
 			if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
+				mouse0Active = true;
+				line.GetComponent<LineRenderer>().SetColors(Color.white, Color.blue);
 				validAnchor = true;
 				anchorYX = map[selectY][selectX];
 				anchor = ReturnTileCenter(map[selectY][selectX].transform.position);
 			}
 		} else {
-			// Deletes node on right click. Lone nodes remain.
 			if (Input.GetMouseButtonDown (1) && !guiError && !loadFile && !saveFile && !guiInput)
 			{
 				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
 				int selectX = (int)(Math.Floor (mouseLocation.x/32));
 				int selectY = (int)(Math.Floor (mouseLocation.y/-32));
 				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
-					if (activeSelection == "conn") {
-						if (map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry))
-							map[selectY][selectX].GetComponent<EditorTile>().consIn.Remove(connectionEntry);
-						if (map[selectY][selectX].GetComponent<EditorTile>().consOut.Contains(connectionEntry))
-							map[selectY][selectX].GetComponent<EditorTile>().consOut.Remove(connectionEntry);
-						DrawConnections(connectionEntry);
-					} else {
-						if (map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry))
-							map[selectY][selectX].GetComponent<EditorTile>().locksIn.Remove(lockEntry);
-						if (map[selectY][selectX].GetComponent<EditorTile>().locksOut.Contains(lockEntry))
-							map[selectY][selectX].GetComponent<EditorTile>().locksOut.Remove(lockEntry);
-						DrawLocks(lockEntry);
-					}
+					mouse0Active = false;
+					line.GetComponent<LineRenderer>().SetColors(Color.white, Color.red);
+					validAnchor = true;
+					anchorYX = map[selectY][selectX];
+					anchor = ReturnTileCenter(map[selectY][selectX].transform.position);
 				}
+//				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
+//					if (activeSelection == "conn") {
+//						if (map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry))
+//							map[selectY][selectX].GetComponent<EditorTile>().consIn.Remove(connectionEntry);
+//						if (map[selectY][selectX].GetComponent<EditorTile>().consOut.Contains(connectionEntry))
+//							map[selectY][selectX].GetComponent<EditorTile>().consOut.Remove(connectionEntry);
+//						DrawConnections(connectionEntry);
+//					} else {
+//						if (map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry))
+//							map[selectY][selectX].GetComponent<EditorTile>().locksIn.Remove(lockEntry);
+//						if (map[selectY][selectX].GetComponent<EditorTile>().locksOut.Contains(lockEntry))
+//							map[selectY][selectX].GetComponent<EditorTile>().locksOut.Remove(lockEntry);
+//						DrawLocks(lockEntry);
+//					}
+//				}
 			}
-			if (Input.GetMouseButton (0) && !guiError && !loadFile && !saveFile && !guiInput && validAnchor == true)
+			if ((Input.GetMouseButton (0) || Input.GetMouseButton(1)) && !guiError && !loadFile && !saveFile && !guiInput && validAnchor == true)
 			{
 				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
 				DrawVerticies(anchor,mouseLocation);
 			}
-			if (Input.GetMouseButtonUp (0) && !guiError && !loadFile && !saveFile && !guiInput)
+			if (mouse0Active && Input.GetMouseButtonUp (0) && !guiError && !loadFile && !saveFile && !guiInput)
 			{
 				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
 				int selectX = (int)(Math.Floor (mouseLocation.x/32));
@@ -269,22 +329,44 @@ public class EditorScript : MonoBehaviour {
 				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
 					// Set the connection (20) or lockgroup (21)
 					if (activeSelection == "conn" && map[selectY][selectX] != anchorYX) // Don't add nodes if they start/end on same tile
-					{	if (!map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry)) //Don't add node if it already exists
+					{	if (!map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry)&& !map[selectY][selectX].GetComponent<EditorTile>().consOut.Contains(connectionEntry)) //Don't add node if one already exists
 							map[selectY][selectX].GetComponent<EditorTile>().consIn.Add(connectionEntry);
-						if (!anchorYX.GetComponent<EditorTile>().consOut.Contains(connectionEntry))
+						if (!anchorYX.GetComponent<EditorTile>().consOut.Contains(connectionEntry) && !anchorYX.GetComponent<EditorTile>().consIn.Contains(connectionEntry))
 							anchorYX.GetComponent<EditorTile>().consOut.Add(connectionEntry);
 						DrawConnections(connectionEntry);
 					} 
 					else if (activeSelection == "lock" && map[selectY][selectX] != anchorYX)
-					{	if (!map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry))
+					{	if (!map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry) && !map[selectY][selectX].GetComponent<EditorTile>().locksOut.Contains(lockEntry))
 							map[selectY][selectX].GetComponent<EditorTile>().locksIn.Add(lockEntry);
-						if (!anchorYX.GetComponent<EditorTile>().locksOut.Contains(lockEntry))
+						if (!anchorYX.GetComponent<EditorTile>().locksOut.Contains(lockEntry) && !anchorYX.GetComponent<EditorTile>().locksIn.Contains(lockEntry))
 							anchorYX.GetComponent<EditorTile>().locksOut.Add (lockEntry);
-						
 						DrawLocks(lockEntry);
 					}
 				}
 				DrawVerticies(anchor,anchor); // Removing mouse line from view
+			}
+			else if (!mouse0Active && Input.GetMouseButtonUp (1) && !guiError && !loadFile && !saveFile && !guiInput) 
+			{
+				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
+				int selectX = (int)(Math.Floor (mouseLocation.x/32));
+				int selectY = (int)(Math.Floor (mouseLocation.y/-32));
+				validAnchor = false;
+				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
+					if (activeSelection == "conn") {
+						if (map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry))
+							map[selectY][selectX].GetComponent<EditorTile>().consIn.Remove(connectionEntry);
+						if (anchorYX.GetComponent<EditorTile>().consOut.Contains(connectionEntry))
+							anchorYX.GetComponent<EditorTile>().consOut.Remove(connectionEntry);
+						DrawConnections(connectionEntry);
+					} else if (activeSelection == "lock") {
+						if (map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry))
+							map[selectY][selectX].GetComponent<EditorTile>().locksIn.Remove(lockEntry);
+						if (anchorYX.GetComponent<EditorTile>().locksOut.Contains(lockEntry))
+							anchorYX.GetComponent<EditorTile>().locksOut.Remove(lockEntry);
+						DrawLocks(lockEntry);
+					}							
+				}
+				DrawVerticies(anchor,anchor);
 			}
 		}
 	}
@@ -775,7 +857,10 @@ public class EditorScript : MonoBehaviour {
 			conPicked = false;
 	
 		if (GUI.Button (new Rect(Screen.width-(32*2)-80,(32+5)*(tileList.Length/2+obsList.Length/2)+240,40,30), "Add")) {
-//			activeSelection = 20;
+			activeCons.Add(activeCons.Count + 1);
+			consDropdown = new GUIContent[activeCons.Count];
+				for (int i = 0; i < consDropdown.Length; i++)
+					consDropdown[i] = new GUIContent(activeCons[i].ToString());
 		}
 		
 		GUI.Label (new Rect(Screen.width-(32*2)-40,(32+5)*(tileList.Length/2+obsList.Length/2)+280,150,30), "Lock Groups:");
@@ -789,7 +874,10 @@ public class EditorScript : MonoBehaviour {
 			lockPicked = false;
 		
 		if (GUI.Button (new Rect(Screen.width-(32*2)-80,(32+5)*(tileList.Length/2+obsList.Length/2)+320,40,30), "Add")) {
-//			activeSelection = 21;
+			activeLocks.Add(activeLocks.Count + 1);
+			locksDropdown = new GUIContent[activeLocks.Count];
+				for (int i = 0; i < locksDropdown.Length; i++)
+					locksDropdown[i] = new GUIContent(activeLocks[i].ToString());
 		}
 		
 		if (loadFile) {
