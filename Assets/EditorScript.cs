@@ -13,7 +13,7 @@ public class EditorScript : MonoBehaviour {
 	private List<List<GameObject>> mapObs = new List<List<GameObject>>();
 	private string[] tileList = new string[] {"Wall","Floor","Door","Button","Plate","Electrified", "Generator", "Source"};
 	private string[] obsList = new string[] {"Spawn", "Box", "Battery"};
-	private string activeSelection = "";
+	private string activeSelection = "empty";
 	private int activeSet = 0;
 	private int gridW = 10;
 	private int gridH = 10;
@@ -45,12 +45,16 @@ public class EditorScript : MonoBehaviour {
 	
 	private bool showConList = false;
 	private bool showLockList = false;
+	private bool showViewList = false;
 	private int connectionEntry = 0;
 	private int lockEntry = 0;
+	private int viewEntry = 0;
 	private GUIContent[] consDropdown = {new GUIContent("1")};
 	private GUIContent[] locksDropdown = {new GUIContent("1")};
+	private GUIContent[] viewDropdown = {new GUIContent("Show Active"), new GUIContent("Show All")};
 	private bool conPicked = false;
 	private bool lockPicked = false;
+	private bool viewPicked = false;
 	
 	// Drawing lines
 	
@@ -58,6 +62,7 @@ public class EditorScript : MonoBehaviour {
 	private bool validAnchor = false; // Control variable to help set tracer line
 	private Vector3 anchor;
 	private GameObject anchorYX;
+	private List<GameObject> lineList = new List<GameObject>();
 	
 	private GameObject line;
 	// Use this for initialization
@@ -71,13 +76,32 @@ public class EditorScript : MonoBehaviour {
 		activeLocks.Add(1);
 	}
 	
+	private void AddLineObject (GameObject a, GameObject b)
+	{
+		lineList.Add (new GameObject(lineList.Count.ToString()));
+		lineList[lineList.Count - 1].AddComponent<LineRenderer>().SetVertexCount(2);
+		lineList[lineList.Count - 1].GetComponent<LineRenderer>().material = new Material (Shader.Find("Particles/Additive"));
+		lineList[lineList.Count - 1].GetComponent<LineRenderer>().SetWidth (4f, 2f);
+		lineList[lineList.Count - 1].GetComponent<LineRenderer>().SetPosition(0,ReturnTileCenter(a.transform.position));
+		lineList[lineList.Count - 1].GetComponent<LineRenderer>().SetPosition(1,ReturnTileCenter(b.transform.position));
+	}
+	
+	private void ClearLineObjects ()
+	{
+		while (lineList.Count > 0)
+		{
+			Destroy (lineList[lineList.Count - 1]);
+			lineList.RemoveAt(lineList.Count - 1);
+		}
+	}
+	
 	private Vector3 ReturnTileCenter (Vector3 v)
 	{
 		Vector3 change = new Vector3(v.x+16,v.y-16,v.z-10);
 		return change;
 	}
 	
-	private void DrawVerticies(Vector3 a, Vector3 b)
+	private void DrawMouse(Vector3 a, Vector3 b)
 	{
 		line.GetComponent<LineRenderer>().SetVertexCount(2);
 		line.GetComponent<LineRenderer>().SetPosition(0, a);
@@ -102,6 +126,25 @@ public class EditorScript : MonoBehaviour {
 		line.GetComponent<LineRenderer>().SetPosition(4,a);
 	}
 	
+	private void DrawLinks()
+	{
+		ClearLineObjects();
+		if (viewEntry == 0) // "Show Active"
+		{
+			if (activeSelection == "conn")
+				DrawConnections(connectionEntry);
+			else if (activeSelection == "lock")
+				DrawLocks(lockEntry);
+		}
+		else if (viewEntry == 1) // "Show All"
+		{
+			foreach (int c in activeCons)
+				DrawConnections(c);
+			foreach (int l in activeLocks)
+				DrawLocks(l);
+		}
+	}
+	
 	private void DrawConnections(int num)
 	{
 		bool outFound = false;
@@ -109,14 +152,11 @@ public class EditorScript : MonoBehaviour {
 		{
 			foreach (GameObject o in g)
 			{
-				o.GetComponent<LineRenderer>().SetColors (new Color(197f/255f,244f/255f,184f/255f), new Color(22f/255f,148f/255f,64f/255f));
 				// Checking all tiles for num, using consOut
 				if ( o.GetComponent<EditorTile>().consOut.Contains(num))
 				{
 					outFound = true;
-					int count = 0;
-					o.GetComponent<LineRenderer>().SetVertexCount(3);
-					o.GetComponent<LineRenderer>().SetPosition(count,ReturnTileCenter(o.transform.position));
+					bool inFound = false;
 					foreach (List<GameObject> g2 in map)
 					{
 						foreach (GameObject o2 in g2)
@@ -124,21 +164,21 @@ public class EditorScript : MonoBehaviour {
 							// Check all tiles again for num, using consIn
 							if (o2.GetComponent<EditorTile>().consIn.Contains(num))
 							{
-								// With another matching tile, set another LineRender point, and then return to source tile again
-								o.GetComponent<LineRenderer>().SetVertexCount(count + 3);
-								o.GetComponent<LineRenderer>().SetPosition(++count,ReturnTileCenter(o2.transform.position));
-								o.GetComponent<LineRenderer>().SetPosition(++count,ReturnTileCenter(o.transform.position));
+								inFound = true;
+								AddLineObject(o,o2);
+								if (num == connectionEntry) // Visual distinction for modifiable entry
+								{
+									lineList[lineList.Count - 1].GetComponent<LineRenderer>().SetColors(new Color(197f/255f,244f/255f,184f/255f),Color.green);
+									lineList[lineList.Count - 1].GetComponent<LineRenderer>().SetWidth(6f, 2f);
+								}
+								else
+									lineList[lineList.Count - 1].GetComponent<LineRenderer>().SetColors (new Color(197f/255f,244f/255f,184f/255f), new Color(22f/255f,148f/255f,64f/255f));
 							}
 						}
 					}
-					if (count == 0) {
-						o.GetComponent<LineRenderer>().SetVertexCount(0);
+					if (!inFound) {
 						o.GetComponent<EditorTile>().consOut.Remove(num); // Removes lone Outs
 					}
-				}
-				else {
-					o.GetComponent<LineRenderer>().SetVertexCount(1);
-					o.GetComponent<LineRenderer>().SetPosition(0,o.transform.position);
 				}
 			}
 		}
@@ -161,14 +201,11 @@ public class EditorScript : MonoBehaviour {
 		{
 			foreach (GameObject o in g)
 			{
-				o.GetComponent<LineRenderer>().SetColors (new Color(236f/255f,243f/255f,183f/255f,255f/255f), new Color(106f/255f,58f/255f,32f/255f,255f/255f));
 				// Checking all tiles for num, using locksOut
 				if ( o.GetComponent<EditorTile>().locksOut.Contains(num))
 				{
 					outFound = true;
-					int count = 0;
-					o.GetComponent<LineRenderer>().SetVertexCount(3);
-					o.GetComponent<LineRenderer>().SetPosition(count,ReturnTileCenter(o.transform.position));
+					bool inFound = false;
 					foreach (List<GameObject> g2 in map)
 					{
 						foreach (GameObject o2 in g2)
@@ -176,21 +213,21 @@ public class EditorScript : MonoBehaviour {
 							// Check all tiles again for num, using locksin
 							if (o2.GetComponent<EditorTile>().locksIn.Contains(num))
 							{
-								// With another matching tile, set another LineRender point, and then return to source tile again
-								o.GetComponent<LineRenderer>().SetVertexCount(count + 3);
-								o.GetComponent<LineRenderer>().SetPosition(++count,ReturnTileCenter(o2.transform.position));
-								o.GetComponent<LineRenderer>().SetPosition(++count,ReturnTileCenter(o.transform.position));
+								inFound = true;
+								AddLineObject(o,o2);
+								if (num == lockEntry) // Visual distinction for modifiable entry
+								{
+									lineList[lineList.Count - 1].GetComponent<LineRenderer>().SetColors(new Color(197f/255f,244f/255f,184f/255f),new Color(206f/255f,58f/255f,32f/255f,255f/255f));
+									lineList[lineList.Count - 1].GetComponent<LineRenderer>().SetWidth(6f, 2f);
+								}
+								else
+									lineList[lineList.Count - 1].GetComponent<LineRenderer>().SetColors (new Color(236f/255f,243f/255f,183f/255f,255f/255f), new Color(106f/255f,58f/255f,32f/255f,255f/255f));
 							}
 						}
 					}
-					if (count == 0) {
-						o.GetComponent<LineRenderer>().SetVertexCount(0);
+					if (!inFound) {
 						o.GetComponent<EditorTile>().locksOut.Remove(num); // Removes lone Outs
 					}
-				}
-				else {
-					o.GetComponent<LineRenderer>().SetVertexCount(1);
-					o.GetComponent<LineRenderer>().SetPosition(0,o.transform.position);
 				}
 			}
 		}
@@ -217,9 +254,6 @@ public class EditorScript : MonoBehaviour {
 					map[i].Add(OT.CreateObject ("builderSprite"));
 					mapObs[i].Add(OT.CreateObject ("builderSprite"));
 					map[i][j].AddComponent<EditorTile>();
-					map[i][j].AddComponent<LineRenderer>();
-    				map[i][j].GetComponent<LineRenderer>().material = new Material (Shader.Find("Particles/Additive"));
-					map[i][j].GetComponent<LineRenderer>().SetWidth (6f, 2f);
 					map[i][j].GetComponent<OTSprite>().position = new Vector2(j*32f,i*-32f);
 					mapObs[i][j].GetComponent<OTSprite>().position = new Vector2(j*32f,i*-32f);
 					map[i][j].GetComponent<OTSprite>().frameName = "ed_Wall0";
@@ -299,26 +333,11 @@ public class EditorScript : MonoBehaviour {
 					anchorYX = map[selectY][selectX];
 					anchor = ReturnTileCenter(map[selectY][selectX].transform.position);
 				}
-//				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
-//					if (activeSelection == "conn") {
-//						if (map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry))
-//							map[selectY][selectX].GetComponent<EditorTile>().consIn.Remove(connectionEntry);
-//						if (map[selectY][selectX].GetComponent<EditorTile>().consOut.Contains(connectionEntry))
-//							map[selectY][selectX].GetComponent<EditorTile>().consOut.Remove(connectionEntry);
-//						DrawConnections(connectionEntry);
-//					} else {
-//						if (map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry))
-//							map[selectY][selectX].GetComponent<EditorTile>().locksIn.Remove(lockEntry);
-//						if (map[selectY][selectX].GetComponent<EditorTile>().locksOut.Contains(lockEntry))
-//							map[selectY][selectX].GetComponent<EditorTile>().locksOut.Remove(lockEntry);
-//						DrawLocks(lockEntry);
-//					}
-//				}
 			}
 			if ((Input.GetMouseButton (0) || Input.GetMouseButton(1)) && !guiError && !loadFile && !saveFile && !guiInput && validAnchor == true)
 			{
 				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
-				DrawVerticies(anchor,mouseLocation);
+				DrawMouse(anchor,mouseLocation);
 			}
 			if (mouse0Active && Input.GetMouseButtonUp (0) && !guiError && !loadFile && !saveFile && !guiInput)
 			{
@@ -326,24 +345,54 @@ public class EditorScript : MonoBehaviour {
 				int selectX = (int)(Math.Floor (mouseLocation.x/32));
 				int selectY = (int)(Math.Floor (mouseLocation.y/-32));
 				validAnchor = false;
-				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
-					// Set the connection (20) or lockgroup (21)
-					if (activeSelection == "conn" && map[selectY][selectX] != anchorYX) // Don't add nodes if they start/end on same tile
-					{	if (!map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry)&& !map[selectY][selectX].GetComponent<EditorTile>().consOut.Contains(connectionEntry)) //Don't add node if one already exists
+				if (Input.GetKey(KeyCode.LeftControl)){ // Holding control creates new link in a new group
+					if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
+						if (activeSelection == "conn" && map[selectY][selectX] != anchorYX){
+							// Add new connection group and make it the active entry
+							activeCons.Add(activeCons.Count + 1);
+							consDropdown = new GUIContent[activeCons.Count];
+							for (int i = 0; i < consDropdown.Length; i++)
+								consDropdown[i] = new GUIContent(activeCons[i].ToString());
+							connectionEntry = activeCons[activeCons.Count - 1];
+							// Set link
 							map[selectY][selectX].GetComponent<EditorTile>().consIn.Add(connectionEntry);
-						if (!anchorYX.GetComponent<EditorTile>().consOut.Contains(connectionEntry) && !anchorYX.GetComponent<EditorTile>().consIn.Contains(connectionEntry))
 							anchorYX.GetComponent<EditorTile>().consOut.Add(connectionEntry);
-						DrawConnections(connectionEntry);
-					} 
-					else if (activeSelection == "lock" && map[selectY][selectX] != anchorYX)
-					{	if (!map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry) && !map[selectY][selectX].GetComponent<EditorTile>().locksOut.Contains(lockEntry))
+							DrawLinks();
+						}
+						else if (activeSelection == "lock" && map[selectY][selectX] != anchorYX) {
+							//Add new lock group and make it the active entry
+							activeLocks.Add(activeLocks.Count + 1);
+							locksDropdown = new GUIContent[activeLocks.Count];
+							for (int i = 0; i < locksDropdown.Length; i++)
+								locksDropdown[i] = new GUIContent(activeLocks[i].ToString());
+							lockEntry = activeLocks[activeLocks.Count - 1];
+							//Set link
 							map[selectY][selectX].GetComponent<EditorTile>().locksIn.Add(lockEntry);
-						if (!anchorYX.GetComponent<EditorTile>().locksOut.Contains(lockEntry) && !anchorYX.GetComponent<EditorTile>().locksIn.Contains(lockEntry))
 							anchorYX.GetComponent<EditorTile>().locksOut.Add (lockEntry);
-						DrawLocks(lockEntry);
+							DrawLinks();
+						}
 					}
 				}
-				DrawVerticies(anchor,anchor); // Removing mouse line from view
+				else {
+					if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
+						// Set the connection (20) or lockgroup (21)
+						if (activeSelection == "conn" && map[selectY][selectX] != anchorYX) // Don't add nodes if they start/end on same tile
+						{	if (!map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry)&& !map[selectY][selectX].GetComponent<EditorTile>().consOut.Contains(connectionEntry)) //Don't add node if one already exists
+								map[selectY][selectX].GetComponent<EditorTile>().consIn.Add(connectionEntry);
+							if (!anchorYX.GetComponent<EditorTile>().consOut.Contains(connectionEntry) && !anchorYX.GetComponent<EditorTile>().consIn.Contains(connectionEntry))
+								anchorYX.GetComponent<EditorTile>().consOut.Add(connectionEntry);
+							DrawLinks();
+						} 
+						else if (activeSelection == "lock" && map[selectY][selectX] != anchorYX)
+						{	if (!map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry) && !map[selectY][selectX].GetComponent<EditorTile>().locksOut.Contains(lockEntry))
+								map[selectY][selectX].GetComponent<EditorTile>().locksIn.Add(lockEntry);
+							if (!anchorYX.GetComponent<EditorTile>().locksOut.Contains(lockEntry) && !anchorYX.GetComponent<EditorTile>().locksIn.Contains(lockEntry))
+								anchorYX.GetComponent<EditorTile>().locksOut.Add (lockEntry);
+							DrawLinks();
+						}
+					}
+				}
+				DrawMouse(anchor,anchor); // Removing mouse line from view
 			}
 			else if (!mouse0Active && Input.GetMouseButtonUp (1) && !guiError && !loadFile && !saveFile && !guiInput) 
 			{
@@ -352,21 +401,22 @@ public class EditorScript : MonoBehaviour {
 				int selectY = (int)(Math.Floor (mouseLocation.y/-32));
 				validAnchor = false;
 				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
+					// Remove connection or lockgroup
 					if (activeSelection == "conn") {
 						if (map[selectY][selectX].GetComponent<EditorTile>().consIn.Contains(connectionEntry))
 							map[selectY][selectX].GetComponent<EditorTile>().consIn.Remove(connectionEntry);
 						if (anchorYX.GetComponent<EditorTile>().consOut.Contains(connectionEntry))
 							anchorYX.GetComponent<EditorTile>().consOut.Remove(connectionEntry);
-						DrawConnections(connectionEntry);
+						DrawLinks();
 					} else if (activeSelection == "lock") {
 						if (map[selectY][selectX].GetComponent<EditorTile>().locksIn.Contains(lockEntry))
 							map[selectY][selectX].GetComponent<EditorTile>().locksIn.Remove(lockEntry);
 						if (anchorYX.GetComponent<EditorTile>().locksOut.Contains(lockEntry))
 							anchorYX.GetComponent<EditorTile>().locksOut.Remove(lockEntry);
-						DrawLocks(lockEntry);
+						DrawLinks();
 					}							
 				}
-				DrawVerticies(anchor,anchor);
+				DrawMouse(anchor,anchor);
 			}
 		}
 	}
@@ -846,13 +896,19 @@ public class EditorScript : MonoBehaviour {
 			browser = BrowserSetup ();
 		}
 		
+		if (Popup.List (new Rect(Screen.width-(32*2)-40,(32+5)*(tileList.Length/2+obsList.Length/2)+180,100,25), ref showViewList, ref viewEntry, viewDropdown[viewEntry], viewDropdown, activeButton)) {
+			viewPicked = true;
+			DrawLinks();
+		} else
+			viewPicked = false;
+		
 		GUI.Label (new Rect(Screen.width-(32*2)-40,(32+5)*(tileList.Length/2+obsList.Length/2)+200,90,30), "Connections:");
 	
 		if (Popup.List (new Rect(Screen.width-(32*2)-40,(32+5)*(tileList.Length/2+obsList.Length/2)+240,90,30), ref showConList, ref connectionEntry, new GUIContent(connectionEntry.ToString()), consDropdown, activeButton)) {
 			conPicked = true;
 			connectionEntry = int.Parse (consDropdown[connectionEntry].text);
-			DrawConnections (connectionEntry);
 			activeSelection = "conn";
+			DrawLinks();
 		} else
 			conPicked = false;
 	
@@ -868,8 +924,8 @@ public class EditorScript : MonoBehaviour {
 		if (Popup.List (new Rect(Screen.width-(32*2)-40,(32+5)*(tileList.Length/2+obsList.Length/2)+320,90,30), ref showLockList, ref lockEntry, new GUIContent(lockEntry.ToString()), locksDropdown, activeButton)) {
 			lockPicked = true;
 			lockEntry = int.Parse (locksDropdown[lockEntry].text);
-			DrawLocks(lockEntry);
 			activeSelection = "lock";
+			DrawLinks();
 		} else
 			lockPicked = false;
 		
