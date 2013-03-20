@@ -22,6 +22,14 @@ public class EditorScript : MonoBehaviour {
 	private List<int> activeCons = new List<int>();
 	private List<int> activeLocks = new List<int>();
 	
+	// Paint/Marquee switch and selection storage
+	
+	private bool paintMode = true;
+	private List<GameObject> boxedSelection = new List<GameObject>();
+	private bool showModeList = false;
+	private int modeEntry = 0;
+	private GUIContent[] modeDropdown = {new GUIContent("Paint"), new GUIContent("Marquee")};
+	private bool modePicked = false;
 	
 	// For GUI display/control
 	
@@ -112,6 +120,7 @@ public class EditorScript : MonoBehaviour {
 	{	/* a b
 		 * d c
 		 */
+		line.GetComponent<LineRenderer>().SetColors(Color.cyan,Color.cyan);
 		line.GetComponent<LineRenderer>().SetVertexCount(5);
 		line.GetComponent<LineRenderer>().SetPosition(0,a);
 		
@@ -124,6 +133,44 @@ public class EditorScript : MonoBehaviour {
 		line.GetComponent<LineRenderer>().SetPosition(3,d);
 		
 		line.GetComponent<LineRenderer>().SetPosition(4,a);
+	}
+	
+	private void SetBoxedSelection(GameObject a, GameObject b)
+	{
+		while (boxedSelection.Count > 0)
+		{
+			boxedSelection.RemoveAt(boxedSelection.Count - 1);
+		}
+		int startX = (int)a.transform.position.x/32;
+		int startY = (int)(a.transform.position.y/-32);
+		int endX = (int)b.transform.position.x/32;
+		int endY = (int)b.transform.position.y/-32;
+		
+		bool stop = false;
+		
+		while (!stop)
+		{
+			bool nextL = false;
+			int X = startX;
+			while (!nextL)
+			{
+				boxedSelection.Add (map[startY][X]);
+				if (X ==  endX)
+					nextL = true;
+				else
+					if (startX < endX)
+						X++;
+					else 
+						X--;
+			}
+			if (startY == endY)
+				stop = true;
+			else
+				if (startY < endY)
+					startY++;
+				else
+					startY--;
+		}
 	}
 	// Set first empty active as selection, otherwise create new active as selection
 	private void CheckForEmptyActive()
@@ -354,7 +401,33 @@ public class EditorScript : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update() {
-		if (tileList.Contains (activeSelection) && Input.GetMouseButton (0) && !guiError && !loadFile && !saveFile && !guiInput)
+		if (!paintMode && !guiError && !loadFile && !saveFile && !guiInput) {
+			if (Input.GetMouseButtonDown (0)) {
+				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
+				int selectX = (int)(Math.Floor (mouseLocation.x/32));
+				int selectY = (int)(Math.Floor (mouseLocation.y/-32));
+				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
+					line.GetComponent<LineRenderer>().SetColors(Color.white, Color.blue);
+					validAnchor = true;
+					anchorYX = map[selectY][selectX];
+					anchor = ReturnTileCenter(map[selectY][selectX].transform.position); //Do I want center?
+				}
+			} else if (Input.GetMouseButtonUp (0) && validAnchor == true) {
+				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
+				int selectX = (int)(Math.Floor (mouseLocation.x/32));
+				int selectY = (int)(Math.Floor (mouseLocation.y/-32));
+				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
+					SetBoxedSelection(anchorYX,map[selectY][selectX]);
+					DragBox(anchor,ReturnTileCenter(map[selectY][selectX].transform.position));
+				}
+				validAnchor = false;
+			}
+			if (Input.GetMouseButton (0) && validAnchor == true) {
+				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
+				DragBox(anchor,mouseLocation);
+			}
+			
+		} else if (tileList.Contains (activeSelection) && Input.GetMouseButton (0) && !guiError && !loadFile && !saveFile && !guiInput)
 		{
 			Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
 			int selectX = (int)(Math.Floor (mouseLocation.x/32));
@@ -391,7 +464,7 @@ public class EditorScript : MonoBehaviour {
 				anchor = ReturnTileCenter(map[selectY][selectX].transform.position);
 			}
 		} else {
-			if (Input.GetMouseButtonDown (1) && !guiError && !loadFile && !saveFile && !guiInput)
+			if ((activeSelection == "conn" || activeSelection == "lock") && Input.GetMouseButtonDown (1) && !guiError && !loadFile && !saveFile && !guiInput)
 			{
 				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
 				int selectX = (int)(Math.Floor (mouseLocation.x/32));
@@ -897,6 +970,19 @@ public class EditorScript : MonoBehaviour {
 			}
 		}
 		
+		if (Popup.List (new Rect(Screen.width - 150,5,70,30), ref showModeList, ref modeEntry, modeDropdown[modeEntry], modeDropdown, activeButton)) {
+			modePicked = true;
+			if (modeEntry == 0) {
+				paintMode = true;
+				line.GetComponent<LineRenderer>().SetColors(Color.white, Color.blue);
+				line.GetComponent<LineRenderer>().SetWidth(6f,2f);
+			} else {
+				paintMode = false;
+				line.GetComponent<LineRenderer>().SetWidth(2f,2f);
+			}
+		} else
+			modePicked = false;
+		
 		GUI.Label (new Rect(Screen.width-(32*2)-10,5,50,30), "Tiles:");
 		for (int i = 0; i < tileList.Length; i++) {
 			GUIStyle buttonStyle;
@@ -919,6 +1005,12 @@ public class EditorScript : MonoBehaviour {
 				guiInput = true;
 				activeSelection = tileList[i];
 				activeSet = tSet;
+				if (!paintMode && boxedSelection.Count > 0){
+					foreach (GameObject o in boxedSelection){
+						SetTypeByDraw(o);
+						SetGraphics(o,mapObs[(int)o.transform.position.y/-32][(int)o.transform.position.x/32]);
+					}
+				}
 			}
 		}
 		
@@ -933,6 +1025,12 @@ public class EditorScript : MonoBehaviour {
 				if (GUI.Button (new Rect(Screen.width-(32*(2-(i+1)%2))-10,(32+5)*((tileList.Length+i+4)/2)+40,32,32), tex, buttonStyle)) {
 					guiInput = true;
 					activeSelection = "empty";
+					if (!paintMode && boxedSelection.Count > 0){
+						foreach (GameObject o in boxedSelection){
+							SetObsByDraw(o);
+							SetGraphics(o,mapObs[(int)o.transform.position.y/-32][(int)o.transform.position.x/32]);
+						}
+					}
 				}
 			} else {
 				if (obsList[i].Equals (activeSelection))
@@ -950,6 +1048,12 @@ public class EditorScript : MonoBehaviour {
 					guiInput = true;
 					activeSelection = obsList[i];
 					activeSet = oSet;
+					if (!paintMode && boxedSelection.Count > 0){
+						foreach (GameObject o in boxedSelection){
+							SetObsByDraw(o);
+							SetGraphics(o,mapObs[(int)o.transform.position.y/-32][(int)o.transform.position.x/32]);
+						}
+					}
 				}
 			}
 		}
@@ -966,7 +1070,7 @@ public class EditorScript : MonoBehaviour {
 			browser = BrowserSetup ();
 		}
 		
-		if (Popup.List (new Rect(Screen.width-(32*2)-40,(32+5)*(tileList.Length/2+obsList.Length/2)+180,100,25), ref showViewList, ref viewEntry, viewDropdown[viewEntry], viewDropdown, activeButton)) {
+		if (Popup.List (new Rect(Screen.width-(32*2)-50,(32+5)*(tileList.Length/2+obsList.Length/2)+170,100,25), ref showViewList, ref viewEntry, viewDropdown[viewEntry], viewDropdown, activeButton)) {
 			viewPicked = true;
 			DrawLinks();
 		} else
