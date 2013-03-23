@@ -3,6 +3,14 @@ using UnityEngine;
 
 public class Bot3 : Player, Obstacle
 {
+	private bool dashing = false;
+	private double endCooldown = 0.0;
+	private double endDash = 0.0;
+	private int dashDir = 0;
+	private const double STEPDIST = 6.4; // Before x1.5
+	private const double COOLDOWN = 2;
+	private const double DURATION = 0.75;
+	
 	public Bot3 () : base(3)
 	{
 	}
@@ -19,4 +27,28 @@ public class Bot3 : Player, Obstacle
 	{
 		return (Math.Floor (speed*1.5));
 	}
+	
+	public override void primary (Tile a)
+	{
+		if (!dashing && Time.time >= endCooldown)
+		{
+			dashing = true;
+			endCooldown = Time.time+COOLDOWN;
+			endDash = Time.time+DURATION;
+			dashDir = currDir;
+		}
+	}
+	
+	public override bool act()
+	{
+		//Dash Conditions
+		if (Time.time >= endDash){
+			dashing = false;
+			return false;
+		} else 
+			return true;
+	}
+	
+	public double STEP(){return STEPDIST;}
+	public int DashDir() {return dashDir;}
 }

@@ -58,4 +58,13 @@ public class EditorTile : MonoBehaviour
 			return lockGroups["out"];
 		}
 	}
+	
+	public void ClearConstraints() {
+		consIn.Clear ();
+		consOut.Clear ();
+		locksIn.Clear ();
+		locksOut.Clear ();
+		tile = "Floor";
+		obs = "";
+	}
 }

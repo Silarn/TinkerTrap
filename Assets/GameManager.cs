@@ -420,6 +420,18 @@ public class GameManager : MonoBehaviour {
 				foreach (Tile t in gameB.Values) {
 					t.update();
 				}
+				
+				//If activebot is Bot3 and it should be dashing
+				if (players[activeBot - 1].act() && players[activeBot-1].GetType() == typeof(Bot3)) {
+					if (((Bot3)players[activeBot - 1]).DashDir() == 0)
+						moveChar(players[activeBot - 1],((Bot3)players[activeBot - 1]).STEP(),0,-1);
+					else if (((Bot3)players[activeBot - 1]).DashDir() == 1)
+						moveChar(players[activeBot - 1],((Bot3)players[activeBot - 1]).STEP(),1,0);
+					else if (((Bot3)players[activeBot - 1]).DashDir() == 2)
+						moveChar(players[activeBot - 1],((Bot3)players[activeBot - 1]).STEP(),0,1);
+					else if (((Bot3)players[activeBot - 1]).DashDir() == 3)
+						moveChar(players[activeBot - 1],((Bot3)players[activeBot - 1]).STEP(),-1,0);
+				}
 			}
 		}
 	}
