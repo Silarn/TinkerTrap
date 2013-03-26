@@ -1,0 +1,314 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<document>
+  <version>3.0</version>
+  <width>6</width>
+  <height>7</height>
+  <y>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+  </y>
+  <y>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Finish</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+  </y>
+  <y>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Floor</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+  </y>
+  <y>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Floor</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+  </y>
+  <y>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Floor</type>
+      <tset>0</tset>
+      <obs>Spawn</obs>
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+  </y>
+  <y>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Floor</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+  </y>
+  <y>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+    <x>
+      <type>Wall</type>
+      <tset>0</tset>
+      <obs />
+      <connections />
+      <locks />
+    </x>
+  </y>
+</document>

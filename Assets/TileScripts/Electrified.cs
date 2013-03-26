@@ -11,7 +11,7 @@ public class Electrified : Floor, Tile {
 		os.PlayLoop ("Electrified"+tSet.ToString()+"_off");
 	}
 	
-	public bool walkable(Obstacle b)
+	public override bool walkable(Obstacle b)
 	{
 		if (on) {
 			if (b.GetType() == typeof(Box) || b.GetType() == typeof(Bot2))

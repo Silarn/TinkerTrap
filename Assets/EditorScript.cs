@@ -11,7 +11,7 @@ public class EditorScript : MonoBehaviour {
 	
 	private List<List<GameObject>> map = new List<List<GameObject>>();
 	private List<List<GameObject>> mapObs = new List<List<GameObject>>();
-	private string[] tileList = new string[] {"Wall","Floor","Door","Button","Plate","Electrified", "Generator", "Source"};
+	private string[] tileList = new string[] {"Wall","Floor","Door","Button","Plate","Electrified", "Generator", "Source", "Finish"};
 	private string[] obsList = new string[] {"Spawn", "Box", "Battery"};
 	private string activeSelection = "empty";
 	private int activeSet = 0;
@@ -59,13 +59,16 @@ public class EditorScript : MonoBehaviour {
 	private int viewEntry = 0;
 	private GUIContent[] consDropdown = {new GUIContent("1")};
 	private GUIContent[] locksDropdown = {new GUIContent("1")};
-	private GUIContent[] viewDropdown = {new GUIContent("Show Active"), new GUIContent("Show All")};
+	private GUIContent[] viewDropdown = {new GUIContent("Show Active"), new GUIContent("Show All"), new GUIContent("Show Query")};
 	private bool conPicked = false;
 	private bool lockPicked = false;
 	private bool viewPicked = false;
 	
 	// Drawing lines
 	
+	private bool showTileActives = false;
+	private GameObject queryTile;
+	private GameObject boxQTile;
 	private bool mouse0Active = true;
 	private bool validAnchor = false; // Control variable to help set tracer line
 	private Vector3 anchor;
@@ -85,31 +88,40 @@ public class EditorScript : MonoBehaviour {
 	}
 	private bool Linkable(GameObject a, GameObject b)
 	{
-		bool linkable = true;
 		if (a == b) 
-			linkable = false;
-		else if (a.GetComponent<EditorTile>().tileType == "Wall" || a.GetComponent<EditorTile>().tileType == "Floor")
-			linkable = false;
-		else if (b.GetComponent<EditorTile>().tileType == "Wall" || b.GetComponent<EditorTile>().tileType == "Floor")
-			linkable = false;
-		
-		return linkable;
+			return false;
+		else if (a.GetComponent<EditorTile>().tileType == "Wall" || a.GetComponent<EditorTile>().tileType == "Floor" || a.GetComponent<EditorTile>().tileType == "Finish")
+			return false;
+		else if (b.GetComponent<EditorTile>().tileType == "Wall" || b.GetComponent<EditorTile>().tileType == "Floor" || b.GetComponent<EditorTile>().tileType == "Finish")
+			return false;
+		else
+			return true;
 	}
 	
-	private bool validSave()
+	private bool ValidSave()
 	{
 		bool saveMe = true;
 		int countPlayerSpawn = 0;
+		int countFinish = 0;
 		
 		foreach (List<GameObject> g in map)
 		{	foreach (GameObject o in g)
 			{
 				if (o.GetComponent<EditorTile>().obsType == "Spawn")
 					countPlayerSpawn++;
+				if (o.GetComponent<EditorTile>().tileType == "Finish")
+					countFinish++;
 			}
 		}
-		if (countPlayerSpawn != 1)
+		if (countPlayerSpawn != 1) {
 			saveMe = false;
+			guiError = true;
+			guiErS = "Spawn must be present and unique.\n";
+		} if (countFinish != 1) {
+			saveMe = false;
+			guiError = true;
+			guiErS += "Finish tile must be present and unique.";
+		}
 		return saveMe;
 	}
 	
@@ -165,6 +177,26 @@ public class EditorScript : MonoBehaviour {
 		line.GetComponent<LineRenderer>().SetPosition(3,d);
 		
 		line.GetComponent<LineRenderer>().SetPosition(4,a);
+	}
+	
+	private void BoxQuery() 
+	{
+		if (boxQTile == null) {
+			boxQTile = new GameObject("Box Query");
+			boxQTile.AddComponent<LineRenderer>().material = new Material (Shader.Find("Particles/Additive"));
+			boxQTile.GetComponent<LineRenderer>().SetWidth (2f,2f);
+			boxQTile.GetComponent<LineRenderer>().SetColors(Color.green,Color.green);
+			boxQTile.GetComponent<LineRenderer>().SetVertexCount(5);
+		}
+		if (queryTile != null) {
+			boxQTile.GetComponent<LineRenderer>().SetVertexCount(5);
+			boxQTile.GetComponent<LineRenderer>().SetPosition(0,queryTile.transform.position);
+			boxQTile.GetComponent<LineRenderer>().SetPosition(1,new Vector3(queryTile.transform.position.x + 32,queryTile.transform.position.y,queryTile.transform.position.z - 12));
+			boxQTile.GetComponent<LineRenderer>().SetPosition(2,new Vector3(queryTile.transform.position.x + 32,queryTile.transform.position.y - 32,queryTile.transform.position.z - 12));
+			boxQTile.GetComponent<LineRenderer>().SetPosition(3,new Vector3(queryTile.transform.position.x,queryTile.transform.position.y - 32,queryTile.transform.position.z - 12));;
+			boxQTile.GetComponent<LineRenderer>().SetPosition(4,queryTile.transform.position);
+		} else
+			boxQTile.GetComponent<LineRenderer>().SetVertexCount(0);
 	}
 	
 	private void ClearBoxedSelection()
@@ -297,13 +329,31 @@ public class EditorScript : MonoBehaviour {
 			foreach (int l in activeLocks)
 				DrawLocks(l);
 		}
+		else if (viewEntry == 2 && queryTile != null)
+		{
+			List<int> queryC = new List<int>();
+			List<int> queryL = new List<int>();
+			foreach (int cI in queryTile.GetComponent<EditorTile>().consIn)
+				queryC.Add (cI);
+			foreach (int cO in queryTile.GetComponent<EditorTile>().consOut)
+				if (!queryC.Contains(cO))
+					queryC.Add (cO);
+			foreach (int lI in queryTile.GetComponent<EditorTile>().locksIn)
+				queryL.Add (lI);
+			foreach (int lO in queryTile.GetComponent<EditorTile>().locksOut)
+				if (!queryL.Contains(lO))
+					queryL.Add (lO);
+			
+			foreach (int c in queryC)
+				DrawConnections(c);
+			foreach (int l in queryL)
+				DrawLocks(l);
+		}
 	}
 	
 	private void CheckAllLinks() {
-		if (viewEntry == 0) {
+		if (viewEntry != 1) {
 			viewEntry = 1;
-			DrawLinks();
-			viewEntry = 0;
 			DrawLinks();
 		} else
 			DrawLinks();	
@@ -407,6 +457,15 @@ public class EditorScript : MonoBehaviour {
 		}
 	}
 	
+	private string printList (List<int> coll) {
+		string makeString = "";
+		if (coll.Count > 0)
+			makeString = coll[0].ToString();
+		for (int count = 1; count < coll.Count; count++)
+			makeString += ", " + coll[count].ToString();
+		return makeString;
+	}
+	
 	private void SetGrid() {
 		bool downSized = false;
 		for (int i = 0; i < gridH; i++) {
@@ -454,6 +513,31 @@ public class EditorScript : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update() {
+		if (Input.GetKeyDown(KeyCode.LeftAlt) && !guiError && !loadFile && !saveFile && !guiInput) {
+			Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
+			int selectX = (int)(Math.Floor (mouseLocation.x/32));
+			int selectY = (int)(Math.Floor (mouseLocation.y/-32));
+			if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
+				if (queryTile == map[selectY][selectX]) {
+					if (!showTileActives)  {
+						showTileActives = true;
+					} else
+						showTileActives = false;
+				} else {
+					queryTile = map[selectY][selectX];
+					BoxQuery();
+					showTileActives = true;
+					if (viewEntry == 2)
+						DrawLinks();
+				}
+			} else {
+				showTileActives = false;
+				queryTile = null;
+				BoxQuery();
+				if (viewEntry == 2)
+					DrawLinks();
+			}
+		}
 		if (!paintMode && activeSelection != "conn" && activeSelection != "lock" && !guiError && !loadFile && !saveFile && !guiInput) {
 			if (Input.GetMouseButtonDown (0)) {
 				Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
@@ -646,8 +730,8 @@ public class EditorScript : MonoBehaviour {
 	
 	private void SetTypeByDraw(GameObject a)
 	{
-		//Stop the case where an obstacle is present and the pending tile type is a wall/door
-		if(!(!(a.GetComponent<EditorTile>().obsType == "") && (activeSelection == "Wall" || activeSelection == "Door" || /*activeSelection == "Electrified" ||*/
+		//Stop the case where an obstacle is present and the pending tile type is invalid (wall/door/finish)
+		if(!(!(a.GetComponent<EditorTile>().obsType == "") && (activeSelection == "Wall" || activeSelection == "Door" || activeSelection == "Finish" ||
 																activeSelection == "Button" || activeSelection == "Generator" /*|| activeSelection == "Source"*/)))
 		{	// Stop Wall or Floor values if any in/out Link is present
 			if (!((activeSelection == "Wall" || activeSelection == "Floor")  && (a.GetComponent<EditorTile>().consIn.Count != 0 || a.GetComponent<EditorTile>().consOut.Count != 0 
@@ -660,8 +744,8 @@ public class EditorScript : MonoBehaviour {
 	
 	private void SetObsByDraw(GameObject a)
 	{
-		//Stop the case where the tile type is a wall/door
-		if (!(a.GetComponent<EditorTile>().tileType == "Wall" || a.GetComponent<EditorTile>().tileType == "Door" || /*a.GetComponent<EditorTile>().tileType == "Electrified" ||*/
+		//Stop the case where the tile type is invalid (wall/door/finish)
+		if (!(a.GetComponent<EditorTile>().tileType == "Wall" || a.GetComponent<EditorTile>().tileType == "Door" || a.GetComponent<EditorTile>().tileType == "Finish" ||
 				a.GetComponent<EditorTile>().tileType == "Button" || a.GetComponent<EditorTile>().tileType == "Generator" /*|| a.GetComponent<EditorTile>().tileType == "Source"*/))
 		{
 			a.GetComponent<EditorTile>().obsType = activeSelection;
@@ -1072,7 +1156,7 @@ public class EditorScript : MonoBehaviour {
 		} else
 			modePicked = false;
 		
-		GUI.Label (new Rect(Screen.width - 78,5,72,190), "Tiles", "box");
+		GUI.Label (new Rect(Screen.width - 78,5,72,222), "Tiles", "box");
 		//GUI.Label (new Rect(Screen.width-(32*2)-10,5,50,30), "Tiles:");
 		for (int i = 0; i < tileList.Length; i++) {
 			GUIStyle buttonStyle;
@@ -1124,7 +1208,7 @@ public class EditorScript : MonoBehaviour {
 			if (i == obsList.Length) {
 				buttonStyle = passiveButton;
 				tex = (Texture) Resources.Load ("Editor/empty", typeof(Texture));
-				if (GUI.Button (new Rect(Screen.width-(32*(2-(i+1)%2))-10,(32+5)*((tileList.Length+i+4)/2)+40,32,32), tex, buttonStyle)) {
+				if (GUI.Button (new Rect(Screen.width-(32*(2-(i+1)%2))-10,(32+5)*((tileList.Length-(tileList.Length%2)+i+4)/2)+40,32,32), tex, buttonStyle)) {
 					guiInput = true;
 					activeSelection = "empty";
 					if (!paintMode && boxedSelection.Count > 0){
@@ -1146,7 +1230,7 @@ public class EditorScript : MonoBehaviour {
 						tex = (Texture) Resources.Load ("Editor/ed_"+obsList[i]+(activeSet+1).ToString (), typeof(Texture));
 				} else
 					tex = (Texture) Resources.Load ("Editor/ed_"+obsList[i]+0.ToString (), typeof(Texture));
-				if (GUI.Button (new Rect(Screen.width-(32*(2-(i+1)%2))-10,(32+5)*((tileList.Length+i+4)/2)+40,32,32), tex, buttonStyle)) {
+				if (GUI.Button (new Rect(Screen.width-(32*(2-(i+1)%2))-10,(32+5)*((tileList.Length-(tileList.Length%2)+i+4)/2)+40,32,32), tex, buttonStyle)) {
 					guiInput = true;
 					activeSelection = obsList[i];
 					activeSet = oSet;
@@ -1170,13 +1254,10 @@ public class EditorScript : MonoBehaviour {
 		}
 		
 		if (GUI.Button (new Rect(200,5,90,60), "Save") && (!saveFile && !loadFile) ) { // Changed '||' to '&&' so filebrower won't open both load and save windows
-			if (validSave()) {
+			if (ValidSave()) {
 				guiInput = true;
 				saveFile = true;
 				browser = BrowserSetup ();
-			} else {
-				guiError = true;
-				guiErS = "Spawn must be present and unique.";
 			}
 		}
 		
@@ -1194,7 +1275,17 @@ public class EditorScript : MonoBehaviour {
 		
 		GUI.Label (new Rect(Screen.width - 147,(32+5)*(tileList.Length/2+obsList.Length/2)+208,141,75), "Connections", "box");
 		//GUI.Label (new Rect(Screen.width-(32*2)-40,(32+5)*(tileList.Length/2+obsList.Length/2)+200,90,30), "Connections:");
-	
+		if (showTileActives){
+			if (queryTile.GetComponent<EditorTile>().consIn.Count > 0)
+				GUI.Label (new Rect(Screen.width - 187 - 5*printList(queryTile.GetComponent<EditorTile>().consIn).Length,(32+5)*(tileList.Length/2+obsList.Length/2)+208,40 + 5*printList(queryTile.GetComponent<EditorTile>().consIn).Length,30),"In: " + printList(queryTile.GetComponent<EditorTile>().consIn), "box");
+			if (queryTile.GetComponent<EditorTile>().consOut.Count > 0)
+				GUI.Label (new Rect(Screen.width - 197 - 5*printList(queryTile.GetComponent<EditorTile>().consOut).Length,(32+5)*(tileList.Length/2+obsList.Length/2)+248,50 + 5*printList(queryTile.GetComponent<EditorTile>().consOut).Length,30),"Out: " + printList(queryTile.GetComponent<EditorTile>().consOut), "box");
+			if (queryTile.GetComponent<EditorTile>().locksIn.Count > 0)
+				GUI.Label (new Rect(Screen.width - 187 - 5*printList(queryTile.GetComponent<EditorTile>().locksIn).Length,(32+5)*(tileList.Length/2+obsList.Length/2)+288,40 + 5*printList(queryTile.GetComponent<EditorTile>().locksIn).Length,30),"In: " + printList(queryTile.GetComponent<EditorTile>().locksIn), "box");
+			if (queryTile.GetComponent<EditorTile>().locksOut.Count > 0)
+				GUI.Label (new Rect(Screen.width - 197 - 5*printList(queryTile.GetComponent<EditorTile>().locksOut).Length,(32+5)*(tileList.Length/2+obsList.Length/2)+328,50 + 5*printList(queryTile.GetComponent<EditorTile>().locksOut).Length,30),"Out: " + printList(queryTile.GetComponent<EditorTile>().locksOut), "box");
+		}
+		
 		if (Popup.List (new Rect(Screen.width - 99,(32+5)*(tileList.Length/2+obsList.Length/2)+240,90,30), ref showConList, ref connectionEntry, new GUIContent(connectionEntry.ToString()), consDropdown, activeButton)) {
 			conPicked = true;
 			connectionEntry = int.Parse (consDropdown[connectionEntry].text);

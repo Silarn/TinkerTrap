@@ -30,6 +30,7 @@ public class GameManager : MonoBehaviour {
 	private bool selection = false;
 	private bool paused = false;
 	private int level = 0;
+	private Finish refFinish;
 	
 	private List<Player> players = new List<Player>();
 	private int activeBot = 1;
@@ -80,31 +81,47 @@ public class GameManager : MonoBehaviour {
 		
 	    ///////menu buttons
 	    //selection options
-		if (level == 0) {
-		    if(GUI.Button(new Rect(55, 100, 180, 40), "Webelo")) {
+		string bot1Text = "Webelo";
+		string bot2Text = "Hob";
+		string bot3Text = "Hisco";
+		if (players[0].level > 0)
+			bot1Text = "UPGRADE: Webelo";
+		if (players[1].level > 0)
+			bot2Text = "UPGRADE: Hob";
+		if (players[2].level > 0)
+			bot3Text = "UPGRADE: Hisco";
+		if (!running) {
+		    if(GUI.Button(new Rect(55, 100, 180, 40), bot1Text)) {
 				running = true;
 				selection = false;
 				activeBot = 1;
 				level++;
-				BuildLevel ("level1");
+				players[0].level++;
+//				BuildLevel ("level1");
+				BuildLevel ("level"+level);
 		    }
-		    if(GUI.Button(new Rect(55, 150, 180, 40), "Hob")) {
+		    if(GUI.Button(new Rect(55, 150, 180, 40), bot2Text)) {
 				running = true;
 				selection = false;
 				activeBot = 2;
 				level++;
-				BuildLevel ("level1");
+				players[1].level++;
+//				BuildLevel ("level1");
+				BuildLevel ("level"+level);
 		    }
-		    if(GUI.Button(new Rect(55, 200, 180, 40), "Hisco")) {
+		    if(GUI.Button(new Rect(55, 200, 180, 40), bot3Text)) {
 				running = true;
 				selection = false;
 				activeBot = 3;
 				level++;
-				BuildLevel ("level1");
+				players[2].level++;
+//				BuildLevel ("level1");
+				BuildLevel ("level"+level);
 		    }
 		    //return to main menu
-		    if(GUI.Button(new Rect(55, 250, 180, 40), "Return")) {
-		    	selection = false;
+			if (level == 0)
+		    	if(GUI.Button(new Rect(55, 250, 180, 40), "Return")) {
+		    		selection = false;
 		    }
 		}
 	   
@@ -154,6 +171,24 @@ public class GameManager : MonoBehaviour {
 		GUI.EndGroup ();
 	}
 	
+	void ClearLevel()
+	{
+		if (gameB.Count > 0) {
+			foreach (KeyValuePair<string,Tile> o in gameB) {
+				Destroy(o.Value.graphic);
+			}
+			foreach (Obstacle ob in gameObs) {
+				Destroy(ob.graphic); // This completely killed the prototype - I think I'm missing the file :\
+			}
+			gameB.Clear();
+			gameConsIn.Clear();
+			gameConsOut.Clear ();
+			gameLocksIn.Clear();
+			gameLocksOut.Clear ();
+			gameObs.Clear();
+		}
+	}
+	
 	void BuildLevel(string map)
 	{
 		TextAsset file = (TextAsset) Resources.Load (map, typeof(TextAsset));
@@ -196,6 +231,8 @@ public class GameManager : MonoBehaviour {
 						read.Read ();
 						var tempTile = Type.GetType (tileType);
 						gameB.Add (squareName, (Tile)Activator.CreateInstance(tempTile, new object[] {i,j,read.ReadContentAsInt ()}));
+						if (tileType == "Finish")
+							refFinish = (Finish)gameB[squareName];
 						break;
 					case "obs":
 						if (!read.IsEmptyElement) {
@@ -340,7 +377,7 @@ public class GameManager : MonoBehaviour {
 				// Bot selection... eventually this will only be if you have multiple robots active!
 				
 				if (Input.GetKeyDown (KeyCode.Alpha1)) {
-					if (activeBot != 1) {
+					if (activeBot != 1 && players[0].level > 0) {
 						players[0].setX (players[activeBot-1].posX);
 						players[0].setY (players[activeBot-1].posY);
 						players[activeBot-1].setXY (-100,-100);
@@ -351,7 +388,7 @@ public class GameManager : MonoBehaviour {
 					}
 				}
 				if (Input.GetKeyDown (KeyCode.Alpha2)) {
-					if (activeBot != 2) {
+					if (activeBot != 2 && players[1].level > 0) {
 						players[1].setX (players[activeBot-1].posX);
 						players[1].setY (players[activeBot-1].posY);
 						players[activeBot-1].setXY (-100,-100);
@@ -362,7 +399,7 @@ public class GameManager : MonoBehaviour {
 					}
 				}
 				if (Input.GetKeyDown (KeyCode.Alpha3)) {
-					if (activeBot != 3) {
+					if (activeBot != 3 && players[2].level > 0) {
 						players[2].setX (players[activeBot-1].posX);
 						players[2].setY (players[activeBot-1].posY);
 						players[activeBot-1].setXY (-100,-100);
@@ -386,34 +423,36 @@ public class GameManager : MonoBehaviour {
 		
 		if (running && !selection) {
 			if (!paused) {
-				double speed = 5;
-				//Directional movement. Should this be limited to one direction at a time?
-				if (Input.GetKeyDown (KeyCode.E)) {
-					DoPrimary ();
-				}
-				if (((Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) || (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))) 
-					&& ((Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) || (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))))
-					speed *= 0.7071;
-				if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) 
-				{
-					moveChar(players[activeBot-1], speed, -1, 0);
-					players[activeBot-1].setDir(3);
-				}
-				if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) 
-				{
-					moveChar(players[activeBot-1], speed, 1, 0);
-					players[activeBot-1].setDir(1);
-				}
+				if (!players[activeBot-1].inAction()) {
+					double speed = 5;
+					//Directional movement. Should this be limited to one direction at a time?
+					if (Input.GetKeyDown (KeyCode.E)) {
+						DoPrimary ();
+					}
+					if (((Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) || (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))) 
+						&& ((Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) || (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))))
+						speed *= 0.7071;
+					if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) 
+					{
+						moveChar(players[activeBot-1], speed, -1, 0);
+						players[activeBot-1].setDir(3);
+					}
+					if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) 
+					{
+						moveChar(players[activeBot-1], speed, 1, 0);
+						players[activeBot-1].setDir(1);
+					}
 		
-				if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) 
-				{
-					moveChar(players[activeBot-1], speed, 0, -1);
-					players[activeBot-1].setDir(0);
-				}
-				if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) 
-				{
-					moveChar(players[activeBot-1], speed, 0, 1);
-					players[activeBot-1].setDir(2);
+					if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) 
+					{
+						moveChar(players[activeBot-1], speed, 0, -1);
+						players[activeBot-1].setDir(0);
+					}
+					if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) 
+					{
+						moveChar(players[activeBot-1], speed, 0, 1);
+						players[activeBot-1].setDir(2);
+					}
 				}
 				
 				// Do round 1 of Tile updates. Final 'act' method called in LateUpdate();
@@ -422,7 +461,7 @@ public class GameManager : MonoBehaviour {
 				}
 				
 				//If activebot is Bot3 and it should be dashing
-				if (players[activeBot - 1].act() && players[activeBot-1].GetType() == typeof(Bot3)) {
+				if (players[activeBot - 1].inAction() && players[activeBot-1].GetType() == typeof(Bot3)) {
 					if (((Bot3)players[activeBot - 1]).DashDir() == 0)
 						moveChar(players[activeBot - 1],((Bot3)players[activeBot - 1]).STEP(),0,-1);
 					else if (((Bot3)players[activeBot - 1]).DashDir() == 1)
@@ -449,6 +488,14 @@ public class GameManager : MonoBehaviour {
 			// Do round 2 of Tile updates. Initial 'update' method called in Update();
 			foreach (Tile t in gameB.Values) {
 				t.act(gameObs);
+			}
+			
+			// Check if level is complete
+			if (refFinish.LevelComplete() == true) {
+				//Do a thing
+				running = false;
+				selection = true;
+				ClearLevel();
 			}
 			
 			OTSprite ps = players[activeBot-1].gfx.GetComponent<OTSprite>();

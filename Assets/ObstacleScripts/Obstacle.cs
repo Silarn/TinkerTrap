@@ -30,7 +30,7 @@ public interface Obstacle
 	bool downleft { get; set; }
 	bool upleft { get; set; }
 	
-	bool act();
+	bool inAction();
 	
 	void setXY(double x, double y);
 	
@@ -40,6 +40,10 @@ public interface Obstacle
 	
 	double getSpeed (double speed);
 	double getSpeed (double speed, Obstacle source);
+	
+	OTSprite graphic {
+		get;
+	}
 	
 	void setDepth(Dictionary<string, Tile> tileSheet);
 }
