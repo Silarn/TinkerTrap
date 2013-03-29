@@ -51,6 +51,9 @@ public abstract class TileClass : Tile
 	public OTSprite graphic {
 		get { return os; }
 	}
+	public int xgrid() {return gridx; }
+	
+	public int ygrid() {return gridy; }
 	
 	// Returns the name of the tile
 	public string myName()	{

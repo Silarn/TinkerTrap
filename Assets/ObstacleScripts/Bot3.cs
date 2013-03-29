@@ -6,8 +6,6 @@ public class Bot3 : Player, Obstacle
 	private bool dashing = false;
 	private double endCooldown = 0.0;
 	private double endDash = 0.0;
-	private int dashDir = 0;
-	private const double STEPDIST = 6.4; // Before x1.5
 	private const double COOLDOWN = 2;
 	private const double DURATION = 0.75;
 
@@ -29,6 +27,8 @@ public class Bot3 : Player, Obstacle
 	
 	public override double getSpeed (double speed)
 	{
+		if (dashing)
+			return (Math.Floor (speed*1.92)); // speed of 5 -> 9.6
 		return (Math.Floor (speed*1.5));
 	}
 	
@@ -44,7 +44,6 @@ public class Bot3 : Player, Obstacle
 			dashing = true;
 			endCooldown = Time.time+COOLDOWN;
 			endDash = Time.time+DURATION;
-			dashDir = currDir;
 		}
 	}
 	
@@ -58,6 +57,4 @@ public class Bot3 : Player, Obstacle
 			return true;
 	}
 	
-	public double STEP(){return STEPDIST;}
-	public int DashDir() {return dashDir;}
 }

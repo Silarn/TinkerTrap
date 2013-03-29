@@ -374,10 +374,10 @@ public class GameManager : MonoBehaviour {
 				if (Input.GetKeyDown(KeyCode.Space))
 				{	interact();	}
 				
-				// Bot selection... eventually this will only be if you have multiple robots active!
+				// Bot selection... eventually this will only be if you have multiple robots active! (Remove comment below)
 				
 				if (Input.GetKeyDown (KeyCode.Alpha1)) {
-					if (activeBot != 1 && players[0].level > 0) {
+					if (activeBot != 1 /*&& players[0].level > 0*/) {
 						players[0].setX (players[activeBot-1].posX);
 						players[0].setY (players[activeBot-1].posY);
 						players[activeBot-1].setXY (-100,-100);
@@ -388,7 +388,7 @@ public class GameManager : MonoBehaviour {
 					}
 				}
 				if (Input.GetKeyDown (KeyCode.Alpha2)) {
-					if (activeBot != 2 && players[1].level > 0) {
+					if (activeBot != 2 /*&& players[1].level > 0*/) {
 						players[1].setX (players[activeBot-1].posX);
 						players[1].setY (players[activeBot-1].posY);
 						players[activeBot-1].setXY (-100,-100);
@@ -399,7 +399,7 @@ public class GameManager : MonoBehaviour {
 					}
 				}
 				if (Input.GetKeyDown (KeyCode.Alpha3)) {
-					if (activeBot != 3 && players[2].level > 0) {
+					if (activeBot != 3 /*&& players[2].level > 0*/) {
 						players[2].setX (players[activeBot-1].posX);
 						players[2].setY (players[activeBot-1].posY);
 						players[activeBot-1].setXY (-100,-100);
@@ -467,16 +467,16 @@ public class GameManager : MonoBehaviour {
 					t.update();
 				}
 				
-				//If activebot is Bot3 and it should be dashing
-				if (players[activeBot - 1].inAction() && players[activeBot-1].GetType() == typeof(Bot3)) {
-					if (((Bot3)players[activeBot - 1]).DashDir() == 0)
-						moveChar(players[activeBot - 1],((Bot3)players[activeBot - 1]).STEP(),0,-1);
-					else if (((Bot3)players[activeBot - 1]).DashDir() == 1)
-						moveChar(players[activeBot - 1],((Bot3)players[activeBot - 1]).STEP(),1,0);
-					else if (((Bot3)players[activeBot - 1]).DashDir() == 2)
-						moveChar(players[activeBot - 1],((Bot3)players[activeBot - 1]).STEP(),0,1);
-					else if (((Bot3)players[activeBot - 1]).DashDir() == 3)
-						moveChar(players[activeBot - 1],((Bot3)players[activeBot - 1]).STEP(),-1,0);
+				// Frame/time stepped move actions of activeBot here
+				if (players[activeBot - 1].inAction() ) {
+					if (players[activeBot - 1].currDir == 0)
+						moveChar(players[activeBot - 1],5,0,-1);
+					else if (players[activeBot - 1].currDir == 1)
+						moveChar(players[activeBot - 1],5,1,0);
+					else if (players[activeBot - 1].currDir == 2)
+						moveChar(players[activeBot - 1],5,0,1);
+					else if (players[activeBot - 1].currDir == 3)
+						moveChar(players[activeBot - 1],5,-1,0);
 				}
 			}
 		}
@@ -514,28 +514,33 @@ public class GameManager : MonoBehaviour {
 	public static float getTileW()
 	{	return tileW;	}
 	
-	private Tile FacingTile() {
-		string tarTile = "";
+	private Tile FacingTile(int distance) {
+		string tarTile1 = "";
+		string tarTile2 = "";
 		if (players[activeBot-1].currDir == 0) {
-			tarTile = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].ytile-1);
+			tarTile1 = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].ytile-distance);
+			tarTile2 = "tile_"+(int)(players[activeBot-1].rightX)+"_"+(int)(players[activeBot-1].ytile-distance);
 		}
 		if (players[activeBot-1].currDir == 1) {
-			tarTile = "tile_"+(int)(players[activeBot-1].xtile-1)+"_"+(int)(players[activeBot-1].ytile);
+			tarTile1 = "tile_"+(int)(players[activeBot-1].rightX+distance)+"_"+(int)(players[activeBot-1].ytile);
+			tarTile2 = "tile_"+(int)(players[activeBot-1].rightX+distance)+"_"+(int)(players[activeBot-1].downY);
 		}
 		if (players[activeBot-1].currDir == 2) {
-			tarTile = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].ytile+1);
+			tarTile1 = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].downY+distance);
+			tarTile2 = "tile_"+(int)(players[activeBot-1].rightX)+"_"+(int)(players[activeBot-1].downY+distance);
 		}
 		if (players[activeBot-1].currDir == 3) {
-			tarTile = "tile_"+(int)(players[activeBot-1].xtile+1)+"_"+(int)(players[activeBot-1].ytile);
+			tarTile1 = "tile_"+(int)(players[activeBot-1].xtile-distance)+"_"+(int)(players[activeBot-1].ytile);
+			tarTile2 = "tile_"+(int)(players[activeBot-1].xtile-distance)+"_"+(int)(players[activeBot-1].downY);
 		}
 		
-		if (gameB.ContainsKey (tarTile))
-			return gameB[tarTile];
+		if (gameB.ContainsKey (tarTile1) && gameB.ContainsKey(tarTile2) && tarTile1 == tarTile2)
+			return gameB[tarTile1];
 		return null;
 	}
 	
 	private void interact() {
-		Tile target = FacingTile ();
+		Tile target = FacingTile (1);
 		if (target != null)
 			target.interact();
 	}
@@ -544,7 +549,17 @@ public class GameManager : MonoBehaviour {
 	// if so, grab it!
 	
 	private void DoPrimary() {
-		Tile target = FacingTile ();
+		if (players[activeBot-1].GetType() == typeof(Bot2)) {
+			Tile target1 = FacingTile (1);
+			Tile target2 = FacingTile (2);
+			if (target1 == null || target2 == null)
+				return;
+			else {
+				((Bot2)players[activeBot-1]).primary(target1,target2);
+				return;
+			}
+		}
+		Tile target = FacingTile (1);
 		if (target == null)
 			return;
 		getMyCorners(players[activeBot-1], players[activeBot-1].posX, players[activeBot-1].posY);

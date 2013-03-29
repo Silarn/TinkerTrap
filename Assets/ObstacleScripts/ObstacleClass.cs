@@ -73,6 +73,11 @@ public abstract class ObstacleClass
 		return tileName;
 	}
 	
+	public string onTileBotR() {
+		string tileName = "tile_"+rightX+"_"+downY;
+		return tileName;
+	}
+	
 	public void setXY(double x, double y) {
 		tileX = x;
 		tileY = y;

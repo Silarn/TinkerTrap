@@ -68,5 +68,9 @@ public interface Tile {
 	
 	// Called with the game Update function.
 	void act(List<Obstacle> objs);
+	
+	string myName();
+	int xgrid();
+	int ygrid();
 }
 
