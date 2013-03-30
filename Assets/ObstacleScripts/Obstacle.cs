@@ -12,6 +12,7 @@ public interface Obstacle
 	}*/
 	
 	int width { get; }
+	int vertLift {get; set; }
 	
 	double posX { get; set; }
 	double posY { get; set; }

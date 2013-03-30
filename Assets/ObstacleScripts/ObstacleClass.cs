@@ -12,6 +12,7 @@ public abstract class ObstacleClass
 	public float xiso, yiso;
 	public bool[] canGo = new bool[4];
 	public int type;
+	public int vertL;
 	public GameObject gfx;
 	public OTAnimatingSprite os;
 	
@@ -21,6 +22,7 @@ public abstract class ObstacleClass
 	
 	public ObstacleClass (int a, double x, double y)
 	{
+		vertL = 0;
 		type = a;
 		if (this.GetType ().IsSubclassOf (typeof(Player)))
 			gfx = OT.CreateObject (this.GetType ().Name);
@@ -52,6 +54,8 @@ public abstract class ObstacleClass
 	public bool upleft { get {return canGo[3];} set {canGo[3] = value;} }
 	
 	public abstract int width { get; }
+	
+	public int vertLift { set { vertL = value; } get { return vertL; } }
 	
 	public virtual bool inAction() { return false;}
 	

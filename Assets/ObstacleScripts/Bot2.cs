@@ -4,9 +4,8 @@ using UnityEngine;
 public class Bot2 : Player, Obstacle
 {
 	private bool hovering = false;
-	private double targetX, targetY;
-	private string hoverTargetTopL = "";
-	private string hoverTargetBotR = "";
+	private string hoverTargetL = "";
+	private string hoverTargetR = "";
 		
 	public Bot2 ()
 	{
@@ -16,14 +15,14 @@ public class Bot2 : Player, Obstacle
 	{
 	}
 	
-	public void primary(Tile a, Tile b)
+	public void primary(Tile l1, Tile l2, Tile r1, Tile r2)
 	{
 		if (level >= 1 && !hovering) {
-			if ( (a.GetType().IsSubclassOf(typeof(Floor)) || a.GetType() == typeof(Floor)) 
-				&& b.GetType() != typeof(Pit) && b.walkable() ) {
-				hoverTargetTopL = b.myName(); // Well that didn't work. Check for clearance using getCorners instead ?
-				targetX = (double)b.xgrid();
-				targetY = (double)b.ygrid();
+			if ( ( (l1.GetType().IsSubclassOf(typeof(Floor)) || l1.GetType() == typeof(Floor)) && l2.GetType() != typeof(Pit) && l2.walkable() ) 
+				&& ( (r1.GetType().IsSubclassOf(typeof(Floor)) || r1.GetType() == typeof(Floor)) && r2.GetType() != typeof(Pit) && r2.walkable() ) ) {
+				hoverTargetL = l2.myName();
+				hoverTargetR = r2.myName();
+				vertLift = 1;
 				hovering = true;
 			}
 		}
@@ -33,17 +32,19 @@ public class Bot2 : Player, Obstacle
 	{
 		//Hover Conditions
 		if (hovering){
-			if ( (currDir == 1  || currDir == 2 ) && !onTile().Equals(hoverTargetTopL))
+			if ( (currDir == 1  || currDir == 2 ) && !onTile().Equals(hoverTargetL))
 				return true;
-			else if ( (currDir == 0  || currDir == 3 ) && !onTileBotR().Equals(hoverTargetTopL))
+			else if ( (currDir == 0  || currDir == 3 ) && !onTileBotR().Equals(hoverTargetR))
 				return true;
-			else 
+			else {
+				vertLift = 0;
 				return hovering = false;
+			}
 		} else {
-//			hoverTarget = "";
-			hovering = false;
-			return false;
+			vertLift = 0;
+			return hovering = false;
 		}
 		
 	}
+	public bool IsHovering() {return hovering;}
 }

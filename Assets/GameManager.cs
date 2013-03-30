@@ -469,7 +469,7 @@ public class GameManager : MonoBehaviour {
 				
 				// Frame/time stepped move actions of activeBot here
 				if (players[activeBot - 1].inAction() ) {
-					if (players[activeBot-1].GetType () == typeof(Bot3)) {
+					if (players[activeBot-1].GetType () != typeof(Bot1)) {
 						if (players[activeBot - 1].currDir == 0)
 							moveChar(players[activeBot - 1],5,0,-1);
 						else if (players[activeBot - 1].currDir == 1)
@@ -516,33 +516,36 @@ public class GameManager : MonoBehaviour {
 	public static float getTileW()
 	{	return tileW;	}
 	
-	private Tile FacingTile(int distance) {
-		string tarTile1 = "";
-		string tarTile2 = "";
-		if (players[activeBot-1].currDir == 0) {
-			tarTile1 = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].ytile-distance);
-			tarTile2 = "tile_"+(int)(players[activeBot-1].rightX)+"_"+(int)(players[activeBot-1].ytile-distance);
+	private Tile FacingTile(bool fromLeft, int distance) {
+		string tarTile = "";
+		if (fromLeft) {
+			if (players[activeBot-1].currDir == 0) {
+				tarTile = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].ytile-distance);
+			} else if (players[activeBot-1].currDir == 1) {
+				tarTile = "tile_"+(int)(players[activeBot-1].rightX+distance)+"_"+(int)(players[activeBot-1].ytile);
+			} else if (players[activeBot-1].currDir == 2) {
+				tarTile = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].downY+distance);
+			} else if (players[activeBot-1].currDir == 3) {
+				tarTile = "tile_"+(int)(players[activeBot-1].xtile-distance)+"_"+(int)(players[activeBot-1].ytile);
+			}
+		} else {
+			if (players[activeBot-1].currDir == 0) {
+				tarTile = "tile_"+(int)(players[activeBot-1].rightX)+"_"+(int)(players[activeBot-1].ytile-distance);
+			} else if (players[activeBot-1].currDir == 1) {
+				tarTile = "tile_"+(int)(players[activeBot-1].rightX+distance)+"_"+(int)(players[activeBot-1].downY);
+			} else if (players[activeBot-1].currDir == 2) {
+				tarTile = "tile_"+(int)(players[activeBot-1].rightX)+"_"+(int)(players[activeBot-1].downY+distance);
+			} else if (players[activeBot-1].currDir == 3) {
+				tarTile = "tile_"+(int)(players[activeBot-1].xtile-distance)+"_"+(int)(players[activeBot-1].downY);
+			}
 		}
-		if (players[activeBot-1].currDir == 1) {
-			tarTile1 = "tile_"+(int)(players[activeBot-1].rightX+distance)+"_"+(int)(players[activeBot-1].ytile);
-			tarTile2 = "tile_"+(int)(players[activeBot-1].rightX+distance)+"_"+(int)(players[activeBot-1].downY);
-		}
-		if (players[activeBot-1].currDir == 2) {
-			tarTile1 = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].downY+distance);
-			tarTile2 = "tile_"+(int)(players[activeBot-1].rightX)+"_"+(int)(players[activeBot-1].downY+distance);
-		}
-		if (players[activeBot-1].currDir == 3) {
-			tarTile1 = "tile_"+(int)(players[activeBot-1].xtile-distance)+"_"+(int)(players[activeBot-1].ytile);
-			tarTile2 = "tile_"+(int)(players[activeBot-1].xtile-distance)+"_"+(int)(players[activeBot-1].downY);
-		}
-		
-		if (gameB.ContainsKey (tarTile1) && gameB.ContainsKey(tarTile2) && tarTile1 == tarTile2)
-			return gameB[tarTile1];
+		if (gameB.ContainsKey (tarTile))
+			return gameB[tarTile];
 		return null;
 	}
 	
 	private void interact() {
-		Tile target = FacingTile (1);
+		Tile target = FacingTile (true,1);
 		if (target != null)
 			target.interact();
 	}
@@ -552,16 +555,27 @@ public class GameManager : MonoBehaviour {
 	
 	private void DoPrimary() {
 		if (players[activeBot-1].GetType() == typeof(Bot2)) {
-			Tile target1 = FacingTile (1);
-			Tile target2 = FacingTile (2);
-			if (target1 == null || target2 == null)
+			Tile left1 = FacingTile (true,1);
+			Tile left2 = FacingTile (true,2);
+			Tile right1 = FacingTile (false,1);
+			Tile right2 = FacingTile (false,2);
+			if (left1 == null || left2 == null || right1 == null || right2 == null)
 				return;
 			else {
-				((Bot2)players[activeBot-1]).primary(target1,target2);
+				// Check that no obstacle is on the ending tiles
+				foreach (Obstacle iob in gameObs) {
+					if (iob != players[activeBot-1]) {
+						string topLCorner = "tile_"+(int)(iob.xtile)+"_"+(int)(iob.ytile);
+						string botRCorner = "tile_"+(int)(iob.rightX)+"_"+(int)(iob.downY);
+						if (topLCorner == left2.myName() || botRCorner == right2.myName())
+							return;
+					}
+				}
+				((Bot2)players[activeBot-1]).primary(left1,left2,right1,right2);
 				return;
 			}
 		}
-		Tile target = FacingTile (1);
+		Tile target = FacingTile (true,1);
 		if (target == null)
 			return;
 		getMyCorners(players[activeBot-1], players[activeBot-1].posX, players[activeBot-1].posY);
@@ -661,7 +675,7 @@ public class GameManager : MonoBehaviour {
 			if (tob.upleft && tob.upright)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && iob != players[activeBot-1]) {
+					if (iob != tob && iob != players[activeBot-1] && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.upYPos < iob.downYPos && tob.downYPos > iob.upYPos &&
 							tob.leftXPos < iob.rightXPos && tob.rightXPos > iob.leftXPos) {
@@ -672,6 +686,7 @@ public class GameManager : MonoBehaviour {
 				if (tob.GetType () == typeof(Bot1))
 					if (((Bot1)tob).grabbing)
 						speedAdj = moveChar (((Bot1)tob).grabbed, ((Bot1)tob).grabbed.getSpeed (speedAdj,tob), dirx, diry);
+				// Need alt case where if 'something' then baseSpeed is used (to ignore obstacles)
 				tob.setY((float)(tob.posY+speedAdj*diry));
 			}
 			else
@@ -694,7 +709,7 @@ public class GameManager : MonoBehaviour {
 			if (tob.downleft && tob.downright)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && iob != players[activeBot-1]) {
+					if (iob != tob && iob != players[activeBot-1] && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.downYPos > iob.upYPos && tob.upYPos < iob.downYPos &&
 							tob.leftXPos < iob.rightXPos && tob.rightXPos > iob.leftXPos) {
@@ -729,7 +744,7 @@ public class GameManager : MonoBehaviour {
 			if (tob.downleft && tob.upleft)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && iob != players[activeBot-1]) {
+					if (iob != tob && iob != players[activeBot-1] && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.leftXPos < iob.rightXPos && tob.rightXPos > iob.leftXPos &&
 							tob.upYPos < iob.downYPos && tob.downYPos > iob.upYPos) {
@@ -761,7 +776,7 @@ public class GameManager : MonoBehaviour {
 			if (tob.upright && tob.downright)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && iob != players[activeBot-1]) {
+					if (iob != tob && iob != players[activeBot-1] && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.rightXPos > iob.leftXPos && tob.leftXPos < iob.rightXPos &&
 							tob.upYPos < iob.downYPos && tob.downYPos > iob.upYPos) {
