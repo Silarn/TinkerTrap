@@ -28,8 +28,10 @@ public class GameManager : MonoBehaviour {
 	
 	private bool running = false;
 	private bool selection = false;
+	private int stageSelect = 0;
 	private bool paused = false;
 	private int level = 0;
+	private string filePath = "save.xml";
 	private Finish refFinish;
 	
 	private List<Player> players = new List<Player>();
@@ -69,6 +71,36 @@ public class GameManager : MonoBehaviour {
 	    GUI.EndGroup();
 	}
 	
+	void StageSelectMenu() {
+		//layout start
+	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 400));
+	   
+	    //the menu background box
+	    GUI.Box(new Rect(0, 0, 300, 200), "");
+		
+		if(GUI.Button(new Rect(55, 100, 180, 40), "New Game")) {
+			// Proceed to SelectionMenu
+			stageSelect = 1;
+		}
+		if (File.Exists(filePath))
+			if(GUI.Button(new Rect(55, 140, 180, 40), "Continue")) {
+				// Grayed out if no save file exisits.
+				// Loads game at last level w/ same bots/updrades
+				if (File.Exists(filePath)) 
+					stageSelect = 2;
+			}
+//		if(GUI.Button(new Rect(55, 180, 180, 40), "Stage Select")) {
+//			
+//			stageSelect = 3;
+//		}
+		if(GUI.Button(new Rect(55, 220, 180, 40), "Back")) {
+			selection = false;
+			stageSelect = 0;
+		}
+		
+		//layout end
+	    GUI.EndGroup();
+	}
 	void SelectionMenu() {
 	    //layout start
 	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 400));
@@ -99,6 +131,7 @@ public class GameManager : MonoBehaviour {
 				players[0].level++;
 //				BuildLevel ("level1");
 				BuildLevel ("level"+level);
+				Save ();
 		    }
 		    if(GUI.Button(new Rect(55, 150, 180, 40), bot2Text)) {
 				running = true;
@@ -108,6 +141,7 @@ public class GameManager : MonoBehaviour {
 				players[1].level++;
 //				BuildLevel ("level1");
 				BuildLevel ("level"+level);
+				Save ();
 		    }
 		    if(GUI.Button(new Rect(55, 200, 180, 40), bot3Text)) {
 				running = true;
@@ -117,11 +151,13 @@ public class GameManager : MonoBehaviour {
 				players[2].level++;
 //				BuildLevel ("level1");
 				BuildLevel ("level"+level);
+				Save ();
 		    }
 		    //return to main menu
 			if (level == 0)
 		    	if(GUI.Button(new Rect(55, 250, 180, 40), "Return")) {
-		    		selection = false;
+//		    		selection = false;
+					stageSelect = 0;
 		    }
 		}
 	   
@@ -171,6 +207,65 @@ public class GameManager : MonoBehaviour {
 		GUI.EndGroup ();
 	}
 	
+	void Save()
+	{
+		XmlWriterSettings settings = new XmlWriterSettings();
+		settings.Indent = true;
+		using (XmlWriter writer = XmlWriter.Create(filePath,settings)) {
+			writer.WriteStartDocument ();
+			writer.WriteStartElement ("document");
+			writer.WriteElementString ("Bot1", players[0].level.ToString());
+			writer.WriteElementString ("Bot2", players[1].level.ToString());
+			writer.WriteElementString ("Bot3", players[2].level.ToString());
+			writer.WriteElementString ("Level", level.ToString());
+			writer.WriteEndDocument ();
+		};
+//		PlayerPrefs.SetInt("Last Level", level);
+//		PlayerPrefs.SetInt("Bot1 Level", players[0].level);
+//		PlayerPrefs.SetInt("Bot2 Level", players[1].level);
+//		PlayerPrefs.SetInt("Bot3 Level", players[2].level);
+	}
+	
+	void LoadFromSave()
+	{
+		XmlReaderSettings settings = new XmlReaderSettings();
+		settings.IgnoreWhitespace = true;
+		
+		using (XmlReader read = XmlReader.Create (filePath, settings)) {
+			while (read.Read ()) {
+				if (read.IsStartElement ())
+				{	
+					switch (read.Name)
+					{
+					case "Bot1":
+						read.Read ();
+						players[0].level = read.ReadContentAsInt();
+						break;
+					case "Bot2":
+						read.Read ();
+						players[1].level = read.ReadContentAsInt();
+						break;
+					case "Bot3":
+						read.Read ();
+						players[2].level = read.ReadContentAsInt();
+						break;
+					case "Level":
+						read.Read ();
+						level = read.ReadContentAsInt();
+						break;
+					}
+				}
+			}
+			read.Close ();
+		}
+//		level = PlayerPrefs.GetInt("Level");
+//		players[0].level = PlayerPrefs.GetInt("Bot1 Level");
+//		players[1].level = PlayerPrefs.GetInt("Bot2 Level");
+//		players[2].level = PlayerPrefs.GetInt("Bot3 Level");
+		running = true;
+		selection = false;
+		BuildLevel ("level"+level);
+	}
 	void ClearLevel()
 	{
 		if (gameB.Count > 0) {
@@ -293,28 +388,24 @@ public class GameManager : MonoBehaviour {
 						if (consGroup) {
 							List<Tile> tilelist;
 							int k = read.ReadContentAsInt();
-							if (k != 0) {
-								if (!gameConsOut.ContainsKey(k)) {
-									tilelist = new List<Tile>();
-									tilelist.Add(gameB[squareName]);
-									gameConsOut.Add(k, tilelist);
-								} else {
-									tilelist = gameConsOut[k];
-									tilelist.Add(gameB[squareName]);
-								}
+							if (!gameConsOut.ContainsKey(k)) {
+								tilelist = new List<Tile>();
+								tilelist.Add(gameB[squareName]);
+								gameConsOut.Add(k, tilelist);
+							} else {
+								tilelist = gameConsOut[k];
+								tilelist.Add(gameB[squareName]);
 							}
 						} else {
 							List<Tile> tilelist;
 							int k = read.ReadContentAsInt();
-							if (k != 0) {
-								if (!gameLocksOut.ContainsKey(k)) {
-									tilelist = new List<Tile>();
-									tilelist.Add(gameB[squareName]);
-									gameLocksOut.Add(k, tilelist);
-								} else {
-									tilelist = gameLocksOut[k];
-									tilelist.Add(gameB[squareName]);
-								}
+							if (!gameLocksOut.ContainsKey(k)) {
+								tilelist = new List<Tile>();
+								tilelist.Add(gameB[squareName]);
+								gameLocksOut.Add(k, tilelist);
+							} else {
+								tilelist = gameLocksOut[k];
+								tilelist.Add(gameB[squareName]);
 							}
 						}
 						break;
@@ -344,9 +435,14 @@ public class GameManager : MonoBehaviour {
 			//load GUI skin
 		    GUI.skin = skin;
 			
-		    if (selection) //Goto Selection Menu
-				SelectionMenu();
-			else //Goto Main Menu
+		    if (selection) { //Goto Selection Menu
+				if (stageSelect == 0)
+					StageSelectMenu();
+				else if (stageSelect == 1)
+					SelectionMenu();
+				else if (stageSelect == 2)
+					LoadFromSave();
+			} else //Goto Main Menu
 			    TopMenu();
 		} else if (paused) {
 				
@@ -833,6 +929,8 @@ public class GameManager : MonoBehaviour {
 				speedAdj = 0;
 			}
 		}
+		if (speedAdj == 0)
+			tob.endAction();
 		
 		return (speedAdj);
 	}

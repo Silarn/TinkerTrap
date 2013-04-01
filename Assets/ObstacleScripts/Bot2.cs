@@ -50,5 +50,13 @@ public class Bot2 : Player, Obstacle
 		}
 		
 	}
+	
+	public override void endAction() {
+		if (hovering) {
+			hovering = false;
+			vertLift = 0;
+		}
+	}
+		
 	public bool IsHovering() {return hovering;}
 }

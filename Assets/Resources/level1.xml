@@ -308,7 +308,7 @@
       <tset>0</tset>
       <obs />
       <connections>
-        <in>0</in>
+        <in>11</in>
       </connections>
       <locks>
         <in>5</in>
@@ -1308,7 +1308,7 @@
       <tset>0</tset>
       <obs />
       <connections>
-        <out>0</out>
+        <out>11</out>
       </connections>
       <locks>
         <out>5</out>
@@ -1326,7 +1326,7 @@
       <tset>0</tset>
       <obs />
       <connections>
-        <out>0</out>
+        <out>11</out>
       </connections>
       <locks>
         <out>5</out>

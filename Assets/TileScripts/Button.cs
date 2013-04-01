@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public class Button : TileClass, Tile {
 
+    private double usedLast = 0.0;
+
 	public Button(int gx, int gy, int tSet) : base(gx, gy, tSet)
 	{
 		os.PlayOnce(this.GetType ().Name+tSet.ToString());
@@ -12,7 +14,11 @@ public class Button : TileClass, Tile {
 	
 	public override void interact()
 	{
-		used = true;
+        if (usedLast + 0.5 < Time.time)
+        {
+            usedLast = Time.time;
+            used = true;
+        }
 	}
 	
 	public override bool isActivated() {

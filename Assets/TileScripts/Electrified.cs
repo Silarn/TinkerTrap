@@ -4,7 +4,10 @@ using System.Collections.Generic;
 
 public class Electrified : Floor, Tile {
 	
-	bool on = false;
+	public bool on = false;
+	private bool prime = false;
+	private double onTime = 0.0;
+	private double onDelay = 2.0;
 	
 	public Electrified(int gx, int gy, int tSet) : base(gx, gy, tSet)
 	{
@@ -43,10 +46,16 @@ public class Electrified : Floor, Tile {
 	
 	public override void update ()
 	{
-		if (isActivated ())
-			on = true;
-		else
+		if (isActivated ()) {
+			if (!prime)
+				onTime = Time.time+onDelay;
+			prime = true;
+		} else {
+			prime = false;
 			on = false;
+		}
+		if (prime && onTime < Time.time)
+			on = true;
 	}
 	
 	public override void act(List<Obstacle> objs) {

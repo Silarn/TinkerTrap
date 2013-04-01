@@ -19,12 +19,18 @@ public class Generator : TileClass, Tile {
 		if (a.GetType () == typeof(Battery) && bat == null) {
 			used = true;
 			bat = (Battery)a;
-		} else if (a.GetType () == typeof(Battery) && bat == (Battery)a) {
-			used = true;
-			bat = null;
+			bat.charge(this);
 		} else if (a.GetType () == typeof(Bot2)) {
 			botCharge = true;
 			endTime = Time.time+8;
+		}
+	}
+	
+	public void batteryLoss(Battery b) {
+		if (b == bat)
+		{
+			used = true;
+			bat = null;
 		}
 	}
 	
@@ -48,7 +54,7 @@ public class Generator : TileClass, Tile {
 				os.PlayOnce(this.GetType ().Name+tileSet.ToString()+"_on");
 				used = false;
 				powered = true;
-			} else if (bat == null && endTime == 0.0) {
+			} else if (bat == null && endTime == 0) {
 				os.PlayOnce(this.GetType ().Name+tileSet.ToString()+"_off");
 				used = false;
 				powered = false;

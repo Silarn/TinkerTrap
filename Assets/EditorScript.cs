@@ -86,6 +86,15 @@ public class EditorScript : MonoBehaviour {
 		activeCons.Add(1);
 		activeLocks.Add(1);
 	}
+	
+	private void Sort( GUIContent[] dropList, List<int> actives) {
+		actives.Sort();
+		
+		var intval = 	from element in dropList
+		      			orderby element.text
+		      			select element;
+	}
+	
 	private bool Linkable(GameObject a, GameObject b)
 	{
 		if (a == b) 
@@ -961,6 +970,8 @@ public class EditorScript : MonoBehaviour {
 			read.Close ();
 			filePath = null;
 		}
+		Sort (consDropdown,activeCons);
+		Sort (locksDropdown,activeLocks);
 	}
 	
 	// Old level loader for conversion purposes

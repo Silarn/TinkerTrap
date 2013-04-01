@@ -7,7 +7,7 @@ public class Bot3 : Player, Obstacle
 	private double endCooldown = 0.0;
 	private double endDash = 0.0;
 	private const double COOLDOWN = 2;
-	private const double DURATION = 0.75;
+	private const double DURATION = 0.5;
 
 	public Bot3 ()
 	{
@@ -28,7 +28,7 @@ public class Bot3 : Player, Obstacle
 	public override double getSpeed (double speed)
 	{
 		if (dashing)
-			return (Math.Floor (speed*1.92)); // speed of 5 -> 9.6
+			return (Math.Floor (speed*2.6)); // speed of 5 -> 9.6
 		return (Math.Floor (speed*1.5));
 	}
 	
@@ -55,6 +55,12 @@ public class Bot3 : Player, Obstacle
 			return false;
 		} else 
 			return true;
+	}
+	
+	public override void endAction() {
+		if (dashing) {
+			dashing = false;
+		}
 	}
 	
 }

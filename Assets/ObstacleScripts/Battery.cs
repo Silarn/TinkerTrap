@@ -24,7 +24,7 @@ public class Battery : ObstacleClass, Obstacle
 	
 	private void onMove() {
 		if (gen != null) {
-			gen.interact (this);
+			gen.batteryLoss (this);
 			gen = null;
 		}
 	}
@@ -47,10 +47,13 @@ public class Battery : ObstacleClass, Obstacle
 		base.setXY (x, y);
 	}
 	
+	public void charge (Generator a) {
+		if (gen == null)
+			gen = a;
+	}
 	public bool charging (Generator a) {
 		if (gen == null) {
-			gen = a;
-			return true;
+			return false;
 		} else if ( a == gen )
 			return true;
 		else
