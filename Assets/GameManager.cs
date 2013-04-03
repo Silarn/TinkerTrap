@@ -33,6 +33,7 @@ public class GameManager : MonoBehaviour {
 	private int level = 0;
 	private string filePath = "save.xml";
 	private Finish refFinish;
+	private Tile refSpawn;
 	
 	private List<Player> players = new List<Player>();
 	private int activeBot = 1;
@@ -259,10 +260,12 @@ public class GameManager : MonoBehaviour {
 			}
 			read.Close ();
 		}
-//		level = PlayerPrefs.GetInt("Level");
-//		players[0].level = PlayerPrefs.GetInt("Bot1 Level");
-//		players[1].level = PlayerPrefs.GetInt("Bot2 Level");
-//		players[2].level = PlayerPrefs.GetInt("Bot3 Level");
+		if (players[0].level > 0)
+			activeBot = 1;
+		else if (players[1].level > 0)
+			activeBot = 2;
+		else 
+			activeBot = 3;
 		running = true;
 		selection = false;
 		BuildLevel ("level"+level);
@@ -335,6 +338,7 @@ public class GameManager : MonoBehaviour {
 							read.Read ();
 							switch (read.ReadContentAsString()) {
 							case "Spawn": // Player starting location, probably only for first level.
+								refSpawn = gameB[squareName];
 								players[activeBot-1].setXY(i,j);
 								gameObs.Add (players[activeBot-1]);
 								break;
@@ -473,35 +477,44 @@ public class GameManager : MonoBehaviour {
 				
 				if (Input.GetAxis("select1") == 1.0) {
 					if (activeBot != 1 /*&& players[0].level > 0*/) {
-						players[0].setX (players[activeBot-1].posX);
-						players[0].setY (players[activeBot-1].posY);
-						players[activeBot-1].setXY (-100,-100);
-						players[0].setDir (players[activeBot-1].currDir);
-						gameObs.Remove (players[activeBot-1]);
-						gameObs.Add (players[0]);
-						activeBot = 1;
+						if (!gameObs.Contains(players[0]) && (players[1].onTile() != refSpawn.myName() && players[1].onTileBotR() != refSpawn.myName()) && (players[2].onTile() != refSpawn.myName() && players[2].onTileBotR() != refSpawn.myName())) {
+							players[0].setXY (refSpawn.xgrid,refSpawn.ygrid);
+	//						players[0].setY (players[activeBot-1].posY);
+	//						players[activeBot-1].setXY (-100,-100);
+							players[0].setDir (0);
+	//						gameObs.Remove (players[activeBot-1]);
+							gameObs.Add (players[0]);
+						}
+						if (gameObs.Contains(players[0]))
+							activeBot = 1;
 					}
 				}
 				if (Input.GetAxis("select2") == 1.0) {
 					if (activeBot != 2 /*&& players[1].level > 0*/) {
-						players[1].setX (players[activeBot-1].posX);
-						players[1].setY (players[activeBot-1].posY);
-						players[activeBot-1].setXY (-100,-100);
-						players[1].setDir (players[activeBot-1].currDir);
-						gameObs.Remove (players[activeBot-1]);
-						gameObs.Add (players[1]);
-						activeBot = 2;
+						if (!gameObs.Contains(players[1]) && (players[0].onTile() != refSpawn.myName() && players[0].onTileBotR() != refSpawn.myName()) && (players[2].onTile() != refSpawn.myName() && players[2].onTileBotR() != refSpawn.myName())) {
+							players[1].setXY (refSpawn.xgrid,refSpawn.ygrid);
+	//						players[1].setY (players[activeBot-1].posY);
+	//						players[activeBot-1].setXY (-100,-100);
+							players[1].setDir (0);
+	//						gameObs.Remove (players[activeBot-1]);
+							gameObs.Add (players[1]);
+							}
+						if (gameObs.Contains(players[1]))
+							activeBot = 2;
 					}
 				}
 				if (Input.GetAxis("select3") == 1.0) {
 					if (activeBot != 3 /*&& players[2].level > 0*/) {
-						players[2].setX (players[activeBot-1].posX);
-						players[2].setY (players[activeBot-1].posY);
-						players[activeBot-1].setXY (-100,-100);
-						players[2].setDir (players[activeBot-1].currDir);
-						gameObs.Remove (players[activeBot-1]);
-						gameObs.Add (players[2]);
-						activeBot = 3;
+						if (!gameObs.Contains(players[2]) && (players[0].onTile() != refSpawn.myName() && players[0].onTileBotR() != refSpawn.myName()) && (players[1].onTile() != refSpawn.myName() && players[1].onTileBotR() != refSpawn.myName())) {
+							players[2].setXY (refSpawn.xgrid,refSpawn.ygrid);
+	//						players[2].setY (players[activeBot-1].posY);
+	//						players[activeBot-1].setXY (-100,-100);
+							players[2].setDir (players[activeBot-1].currDir);
+	//						gameObs.Remove (players[activeBot-1]);
+							gameObs.Add (players[2]);
+						}
+						if (gameObs.Contains(players[2]))
+							activeBot = 3;
 					}
 				}
 			}
