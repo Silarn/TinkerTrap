@@ -13,7 +13,7 @@ public abstract class Player : ObstacleClass, Obstacle
 	protected bool stopping = false;
 	protected bool playstop = false;
 	protected float stopTime = Time.time;
-	public int level = 0;
+	public int level = -1;
 	
 	public Player() : base(1)
 	{

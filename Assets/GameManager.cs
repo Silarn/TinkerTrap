@@ -31,6 +31,7 @@ public class GameManager : MonoBehaviour {
 	private int stageSelect = 0;
 	private bool paused = false;
 	private int level = 0;
+	private bool showMessages = true;
 	private string filePath = "save.xml";
 	private Finish refFinish;
 	private Tile refSpawn;
@@ -170,13 +171,13 @@ public class GameManager : MonoBehaviour {
 	// If you hit Escape while playing the game!
 	void PauseMenu() {
 	    //layout start
-	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 200));
+	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 300));
 	   
 	    //the menu background box
-	    GUI.Box(new Rect(0, 0, 300, 200), "");
+	    GUI.Box(new Rect(0, 0, 300, 270), "");
 	   
 	    //logo picture
-	    GUI.Label(new Rect(34, 10, 300, 40), "Game Paused!");
+	    GUI.Label(new Rect(94, 15, 300, 40), "Game Paused!");
 	   
 	    ///////main menu buttons
 	    //game start button
@@ -187,8 +188,16 @@ public class GameManager : MonoBehaviour {
 	    if(GUI.Button(new Rect(55, 110, 180, 40), "Editor")) {
 			Application.LoadLevel (1);
 	    }
+		//toggle tutorial
+		if (showMessages) {
+			if(GUI.Button(new Rect(55, 160, 180, 40), "Tutorial: On")) {
+				showMessages = false;		}
+		} else {
+			if(GUI.Button(new Rect(55, 160, 180, 40), "Tutorial: Off")) {
+				showMessages = true; 	}
+		}
 	    //quit button
-	    if(GUI.Button(new Rect(55, 160, 180, 40), "Quit")) {
+	    if(GUI.Button(new Rect(55, 210, 180, 40), "Quit")) {
 	    	Application.Quit();
 	    }
 	   
@@ -206,6 +215,17 @@ public class GameManager : MonoBehaviour {
 		GUI.Label (new Rect(5, 266, 133, 20), "1");
 		GUI.Label (new Rect(138, 266, 133, 20), "2");
 		GUI.Label (new Rect(271, 266, 133, 20), "3");
+		
+		if (showMessages && ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1].Count > 0) {
+			GUI.Box (new Rect(Screen.width-(Screen.width/2)-5, 100, 300,(((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1].Count * 60))," ");
+			int stepMsgs = 0;
+			foreach (KeyValuePair<int,string> kvp in ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1]) {
+				if (players[activeBot-1].level >= kvp.Key) {
+					GUI.Label(new Rect(Screen.width-(Screen.width/2),100 + stepMsgs,290,60), kvp.Value);
+					stepMsgs += 60;
+				}
+			}
+		}
 		GUI.EndGroup ();
 	}
 	
@@ -220,6 +240,7 @@ public class GameManager : MonoBehaviour {
 			writer.WriteElementString ("Bot2", players[1].level.ToString());
 			writer.WriteElementString ("Bot3", players[2].level.ToString());
 			writer.WriteElementString ("Level", level.ToString());
+			writer.WriteElementString ("Tutorial", showMessages.ToString());
 			writer.WriteEndDocument ();
 		};
 //		PlayerPrefs.SetInt("Last Level", level);
@@ -255,6 +276,10 @@ public class GameManager : MonoBehaviour {
 						read.Read ();
 						level = read.ReadContentAsInt();
 						break;
+					case "Tutorial":
+						read.Read ();
+						showMessages = read.ReadContentAsBoolean();
+						break;
 					}
 				}
 			}
@@ -277,7 +302,11 @@ public class GameManager : MonoBehaviour {
 				Destroy(o.Value.graphic);
 			}
 			foreach (Obstacle ob in gameObs) {
-				Destroy(ob.graphic); // This completely killed the prototype - I think I'm missing the file :\
+				if (ob.GetType() != typeof(Player)) {
+					Destroy(ob.graphic); 
+				} else {
+					ob.setXY(-100,-100); // Remove Player object from view
+				}
 			}
 			gameB.Clear();
 			gameConsIn.Clear();
@@ -298,6 +327,8 @@ public class GameManager : MonoBehaviour {
 		using (XmlReader read = XmlReader.Create(new StringReader(file.text))) {
 			int i = -1;
 			int j = -1;
+			int setBot = -1;
+			int lvl = 0;
 			bool consGroup = true;
 			string squareName = "";
 			string tileType = "Wall";
@@ -413,6 +444,27 @@ public class GameManager : MonoBehaviour {
 							}
 						}
 						break;
+					case "tutorial":
+						break;
+					case "bot1":
+						setBot = 0;
+						break;
+					case "bot2":
+						setBot = 1;
+						break;
+					case "bot3":
+						setBot = 2;
+						break;
+					case "level":
+						read.Read ();
+						lvl = int.Parse(read.Value);
+						break;
+					case "msg":
+						read.Read ();
+						string msg = read.Value;
+						// Set msg to tile
+						gameB[squareName].addMessage(setBot, lvl, msg);
+						break;
 					}
 				}
 			}
@@ -476,8 +528,8 @@ public class GameManager : MonoBehaviour {
 				// Bot selection... eventually this will only be if you have multiple robots active! (Remove comment below)
 				
 				if (Input.GetAxis("select1") == 1.0) {
-					if (activeBot != 1 /*&& players[0].level > 0*/) {
-						if (!gameObs.Contains(players[0]) && (players[1].onTile() != refSpawn.myName() && players[1].onTileBotR() != refSpawn.myName()) && (players[2].onTile() != refSpawn.myName() && players[2].onTileBotR() != refSpawn.myName())) {
+					if (activeBot != 1 /*&& players[0].level >= 0*/) {
+						if (!gameObs.Contains(players[0]) && TileClear(refSpawn.myName())) {
 							players[0].setXY (refSpawn.xgrid,refSpawn.ygrid);
 	//						players[0].setY (players[activeBot-1].posY);
 	//						players[activeBot-1].setXY (-100,-100);
@@ -490,8 +542,8 @@ public class GameManager : MonoBehaviour {
 					}
 				}
 				if (Input.GetAxis("select2") == 1.0) {
-					if (activeBot != 2 /*&& players[1].level > 0*/) {
-						if (!gameObs.Contains(players[1]) && (players[0].onTile() != refSpawn.myName() && players[0].onTileBotR() != refSpawn.myName()) && (players[2].onTile() != refSpawn.myName() && players[2].onTileBotR() != refSpawn.myName())) {
+					if (activeBot != 2 /*&& players[1].level >= 0*/) {
+						if (!gameObs.Contains(players[1]) && TileClear(refSpawn.myName())) {
 							players[1].setXY (refSpawn.xgrid,refSpawn.ygrid);
 	//						players[1].setY (players[activeBot-1].posY);
 	//						players[activeBot-1].setXY (-100,-100);
@@ -504,8 +556,8 @@ public class GameManager : MonoBehaviour {
 					}
 				}
 				if (Input.GetAxis("select3") == 1.0) {
-					if (activeBot != 3 /*&& players[2].level > 0*/) {
-						if (!gameObs.Contains(players[2]) && (players[0].onTile() != refSpawn.myName() && players[0].onTileBotR() != refSpawn.myName()) && (players[1].onTile() != refSpawn.myName() && players[1].onTileBotR() != refSpawn.myName())) {
+					if (activeBot != 3 /*&& players[2].level >= 0*/) {
+						if (!gameObs.Contains(players[2]) && TileClear(refSpawn.myName())) {
 							players[2].setXY (refSpawn.xgrid,refSpawn.ygrid);
 	//						players[2].setY (players[activeBot-1].posY);
 	//						players[activeBot-1].setXY (-100,-100);
@@ -633,6 +685,19 @@ public class GameManager : MonoBehaviour {
 	public static float getTileW()
 	{	return tileW/2;	}
 	
+	// Determine if a Tile has an obstacle present
+	private bool TileClear(string name) {
+		if (!gameB.ContainsKey(name))
+			return false;
+		else {
+			foreach (Obstacle ob in gameObs) {
+				if (ob.onTile() == name || ob.onTileBotR() == name)
+					return false;
+			}
+			return true;
+		}
+	}
+	
 	private Tile FacingTile(bool fromLeft, int distance) {
 		string tarTile = "";
 		if (fromLeft) {
@@ -680,16 +745,22 @@ public class GameManager : MonoBehaviour {
 				return;
 			else {
 				// Check that no obstacle is on the ending tiles
-				foreach (Obstacle iob in gameObs) {
-					if (iob != players[activeBot-1]) {
-						string topLCorner = "tile_"+(int)(iob.xtile)+"_"+(int)(iob.ytile);
-						string botRCorner = "tile_"+(int)(iob.rightX)+"_"+(int)(iob.downY);
-						if (topLCorner == left2.myName() || botRCorner == right2.myName())
-							return;
-					}
+				if (TileClear(left2.myName()) && TileClear(right2.myName())) {
+					((Bot2)players[activeBot-1]).primary(left1,left2,right1,right2);
+					return;
+				} else {
+					return;
 				}
-				((Bot2)players[activeBot-1]).primary(left1,left2,right1,right2);
-				return;
+//				foreach (Obstacle iob in gameObs) {
+//					if (iob != players[activeBot-1]) {
+//						string topLCorner = "tile_"+(int)(iob.xtile)+"_"+(int)(iob.ytile);
+//						string botRCorner = "tile_"+(int)(iob.rightX)+"_"+(int)(iob.downY);
+//						if (topLCorner == left2.myName() || botRCorner == right2.myName())
+//							return;
+//					}
+//				}
+//				((Bot2)players[activeBot-1]).primary(left1,left2,right1,right2);
+//				return;
 			}
 		}
 		Tile target = FacingTile (true,1);

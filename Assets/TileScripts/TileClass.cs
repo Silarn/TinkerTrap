@@ -14,6 +14,7 @@ public abstract class TileClass : Tile
 	public int[] lockGroup;
 	public int gridx, gridy;
 	public GameObject gfx;
+	public List<Dictionary<int, string>> messages = new List<Dictionary<int, string>>(3);
 	
 	protected int tileSet;
 	protected OTAnimatingSprite os;
@@ -35,7 +36,9 @@ public abstract class TileClass : Tile
 		yiso = (-gy-gx)*GameManager.getTileW()/2F;
 		os.position = new Vector2 (xiso, yiso);
 		os.PlayOnce (this.GetType().Name+tSet.ToString());
-		
+		messages.Add(new Dictionary<int, string>() );
+		messages.Add(new Dictionary<int, string>() );
+		messages.Add(new Dictionary<int, string>() );
 		if (walkable())
 			os.depth = 1;
 	}
@@ -65,6 +68,10 @@ public abstract class TileClass : Tile
 	public string myName()	{
 		string tileName = "tile_"+gridx+"_"+gridy;
 		return tileName;
+	}
+	
+	public void addMessage(int bot, int lvl, string msg) {
+		messages[bot].Add(lvl, msg);
 	}
 	
 	public void addConnection(int k, List<Tile> l, bool isSource)

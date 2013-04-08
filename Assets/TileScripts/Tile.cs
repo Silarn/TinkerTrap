@@ -54,7 +54,9 @@ public interface Tile {
 	OTAnimatingSprite graphic {
 		get;
 	}
-
+	
+	void addMessage(int bot, int lvl, string msg);
+	
 	void addConnection(int k, List<Tile> l, bool isSource);
 	
 	void addLock(int k, List<Tile> l, bool isSource);

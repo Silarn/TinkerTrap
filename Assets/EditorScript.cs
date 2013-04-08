@@ -64,6 +64,14 @@ public class EditorScript : MonoBehaviour {
 	private bool lockPicked = false;
 	private bool viewPicked = false;
 	
+	// Tutorial Messages
+	
+	private int keyToAdd = 0;
+	private bool showMessageList = false;
+	private int bot = 0;
+	private GUIContent[] messageDropdown = {new GUIContent("Bot 1"), new GUIContent("Bot 2"), new GUIContent("Bot 3")};
+	private bool messPicked = false;
+	
 	// Drawing lines
 	
 	private bool showTileActives = false;
@@ -161,7 +169,6 @@ public class EditorScript : MonoBehaviour {
 	
 	private void DrawMouse(Vector3 a, Vector3 b)
 	{
-		line.GetComponent<LineRenderer>().SetColors(Color.white, Color.blue);
 		line.GetComponent<LineRenderer>().SetWidth(6f,2f);
 		line.GetComponent<LineRenderer>().SetVertexCount(2);
 		line.GetComponent<LineRenderer>().SetPosition(0, a);
@@ -553,7 +560,7 @@ public class EditorScript : MonoBehaviour {
 				int selectX = (int)(Math.Floor (mouseLocation.x/32));
 				int selectY = (int)(Math.Floor (mouseLocation.y/-32));
 				if ((selectY >= 0 && selectY < gridH) && (selectX >= 0 && selectX < gridW)) {
-					line.GetComponent<LineRenderer>().SetColors(Color.white, Color.blue);
+//					line.GetComponent<LineRenderer>().SetColors(Color.white, Color.blue);
 					validAnchor = true;
 					anchorYX = map[selectY][selectX];
 					anchor = ReturnTileCenter(map[selectY][selectX].transform.position);
@@ -844,6 +851,18 @@ public class EditorScript : MonoBehaviour {
 						writer.WriteElementString ("out", locks.ToString());
 					}
 					writer.WriteEndElement ();
+					writer.WriteStartElement ("tutorial");
+					int botNum = 0;
+					foreach (var bot in j.GetComponent<EditorTile>().botMessage) {
+						botNum++;
+						writer.WriteStartElement ("bot"+botNum.ToString());
+						foreach (KeyValuePair<int, string> msg in j.GetComponent<EditorTile>().botMessage[botNum-1]) {
+							writer.WriteElementString ("level", msg.Key.ToString());
+							writer.WriteElementString ("msg",msg.Value);
+						}
+						writer.WriteEndElement ();
+					}
+					writer.WriteEndElement ();
 					writer.WriteEndElement ();
 				}
 				writer.WriteEndElement();
@@ -872,6 +891,8 @@ public class EditorScript : MonoBehaviour {
 			int i = -1;
 			int j = -1;
 			bool consGroup = true;
+			int botGroup = -1;
+			int lvl = 0;
 			while (read.Read ()) {
 				if (read.IsStartElement ())
 				{
@@ -963,6 +984,26 @@ public class EditorScript : MonoBehaviour {
 							if (!activeLocks.Contains (node))
 								activeLocks.Add (node);
 						}
+						break;
+					case "tutorial":
+						break;
+					case "bot1":
+						botGroup = 0;
+						break;
+					case "bot2":
+						botGroup = 1;
+						break;
+					case "bot3":
+						botGroup = 2;
+						break;
+					case "level":
+						read.Read();
+						lvl = int.Parse (read.Value);
+						break;
+					case "msg":
+						read.Read ();
+						string msg = read.Value;
+						map[j][i].GetComponent<EditorTile>().botMessage[botGroup].Add (lvl,msg);
 						break;
 					}
 				}
@@ -1330,6 +1371,37 @@ public class EditorScript : MonoBehaviour {
 			ClearBoxedSelection();
 			CheckForEmptyActive();
 			DrawLinks();
+		}
+		
+		if (queryTile != null) {
+			GUI.Label (new Rect(Screen.width - 235, (32+5)*(tileList.Length/2+obsList.Length/2)+370,230,63 + (60 * queryTile.GetComponent<EditorTile>().botMessage[bot].Count)), "Tutorial/Hint Message", "box");
+			if (Popup.List (new Rect(Screen.width - 230, (32+5)*(tileList.Length/2+obsList.Length/2)+395,50,30), ref showMessageList, ref bot, messageDropdown[bot], messageDropdown, activeButton)) {
+				messPicked = true;
+			} else {
+				messPicked = false;
+			}
+
+			if (GUI.Button(new Rect(Screen.width - 175, (32+5)*(tileList.Length/2+obsList.Length/2)+396,20,20), "+")) {
+				if (!queryTile.GetComponent<EditorTile>().botMessage[bot].ContainsKey(keyToAdd)) {
+					queryTile.GetComponent<EditorTile>().botMessage[bot].Add (keyToAdd,"");
+				}	
+			}
+			GUI.Label(new Rect(Screen.width - 150, (32+5)*(tileList.Length/2+obsList.Length/2)+393,130,30),"Active at level:");
+			keyToAdd = int.Parse(GUI.TextArea(new Rect(Screen.width - 50, (32+5)*(tileList.Length/2+obsList.Length/2)+393,30,30), keyToAdd.ToString(), 2));
+			int count = 0;
+			List<KeyValuePair<int, string>> tempHold = new List<KeyValuePair<int, string>>(queryTile.GetComponent<EditorTile>().botMessage[bot]);
+			foreach (KeyValuePair<int, string> kvp in tempHold) {
+				GUI.Label(new Rect(Screen.width - 230, (32+5)*(tileList.Length/2+obsList.Length/2)+425 + (count * 60),30,30), kvp.Key.ToString()+":");
+				queryTile.GetComponent<EditorTile>().botMessage[bot][kvp.Key] = GUI.TextArea(new Rect(Screen.width - 200, (32+5)*(tileList.Length/2+obsList.Length/2)+428 + (count * 60),190,60), kvp.Value);
+				
+				if (GUI.Button(new Rect(Screen.width - 230, (32+5)*(tileList.Length/2+obsList.Length/2)+455 + (count * 60),20,20),"-")) {
+					queryTile.GetComponent<EditorTile>().botMessage[bot].Remove(kvp.Key);	
+				}
+				count++;
+			}		
+		} else {
+			GUI.Label (new Rect(Screen.width - 235, (32+5)*(tileList.Length/2+obsList.Length/2)+370,230,90), "Tutorial/Hint Message", "box");
+			GUI.Label (new Rect(Screen.width - 230, (32+5)*(tileList.Length/2+obsList.Length/2)+400,225,60), "Select tile (Left Alt) to set/view messages.");	
 		}
 		
 		if (loadFile) {

@@ -11,6 +11,13 @@ public class EditorTile : MonoBehaviour
     private string obs = "";
     private Dictionary<string,List<int>> connections = new Dictionary<string,List<int>>();
     private Dictionary<string,List<int>> lockGroups = new Dictionary<string,List<int>>();
+	public List<SortedDictionary<int, string>> botMessage = new List<SortedDictionary<int, string>>() ;
+	
+	public EditorTile () {
+		botMessage.Add (new SortedDictionary<int, string>() );
+		botMessage.Add (new SortedDictionary<int, string>() );
+		botMessage.Add (new SortedDictionary<int, string>() );
+	}
 	
 	public string tileType {
 		get { return tile; }

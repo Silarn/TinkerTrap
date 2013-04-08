@@ -35,6 +35,9 @@ public interface Obstacle
 	bool inAction();
 	void endAction();
 	
+	string onTile();
+	string onTileBotR();
+	
 	void setXY(double x, double y);
 	
 	void setX (double x);
