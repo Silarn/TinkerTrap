@@ -53,6 +53,10 @@ public abstract class ObstacleClass
 	public bool downleft { get {return canGo[2];} set {canGo[2] = value;} }
 	public bool upleft { get {return canGo[3];} set {canGo[3] = value;} }
 	
+//	public virtual double[] GiveCorners {
+//		get {return dirPos;} 
+//	}
+	
 	public int depth {
 		get {
 			int depthshift = ((int)(GameManager.getTileW ())-width/2)/2;
@@ -60,7 +64,16 @@ public abstract class ObstacleClass
 		}
 	}
 	
+	public virtual void SetCorners() {
+		downYPos = posY+length/2-1;
+		upYPos = posY;
+		leftXPos = posX;
+		rightXPos = posX+width/2-1;
+	}
+	
 	public abstract int width { get; }
+	
+	public virtual int length {/*set {width = value;}*/ get {return width;} } //Use?
 	
 	public int vertLift { set { vertL = value; } get { return vertL; } }
 	
@@ -82,7 +95,7 @@ public abstract class ObstacleClass
 	
 	// Returns the name of the Tile currently occupied by the Obstacle
 	public string onTile()	{
-		string tileName = "tile_"+xtile+"_"+ytile;
+		string tileName = "tile_"+leftX+"_"+upY;
 		return tileName;
 	}
 	

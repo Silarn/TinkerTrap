@@ -12,6 +12,7 @@ public interface Obstacle
 	}*/
 	
 	int width { get; }
+	int length { get; }
 	int vertLift {get; set; }
 	
 	int depth { get; }
@@ -32,6 +33,7 @@ public interface Obstacle
 	bool downleft { get; set; }
 	bool upleft { get; set; }
 	
+	void SetCorners();
 	bool inAction();
 	void endAction();
 	

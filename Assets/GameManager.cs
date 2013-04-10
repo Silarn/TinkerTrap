@@ -702,23 +702,23 @@ public class GameManager : MonoBehaviour {
 		string tarTile = "";
 		if (fromLeft) {
 			if (players[activeBot-1].currDir == 0) {
-				tarTile = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].ytile-distance);
+				tarTile = "tile_"+(int)(players[activeBot-1].leftX)+"_"+(int)(players[activeBot-1].upY-distance);
 			} else if (players[activeBot-1].currDir == 1) {
-				tarTile = "tile_"+(int)(players[activeBot-1].rightX+distance)+"_"+(int)(players[activeBot-1].ytile);
+				tarTile = "tile_"+(int)(players[activeBot-1].rightX+distance)+"_"+(int)(players[activeBot-1].upY);
 			} else if (players[activeBot-1].currDir == 2) {
-				tarTile = "tile_"+(int)(players[activeBot-1].xtile)+"_"+(int)(players[activeBot-1].downY+distance);
+				tarTile = "tile_"+(int)(players[activeBot-1].leftX)+"_"+(int)(players[activeBot-1].downY+distance);
 			} else if (players[activeBot-1].currDir == 3) {
-				tarTile = "tile_"+(int)(players[activeBot-1].xtile-distance)+"_"+(int)(players[activeBot-1].ytile);
+				tarTile = "tile_"+(int)(players[activeBot-1].leftX-distance)+"_"+(int)(players[activeBot-1].upY);
 			}
 		} else {
 			if (players[activeBot-1].currDir == 0) {
-				tarTile = "tile_"+(int)(players[activeBot-1].rightX)+"_"+(int)(players[activeBot-1].ytile-distance);
+				tarTile = "tile_"+(int)(players[activeBot-1].rightX)+"_"+(int)(players[activeBot-1].upY-distance);
 			} else if (players[activeBot-1].currDir == 1) {
 				tarTile = "tile_"+(int)(players[activeBot-1].rightX+distance)+"_"+(int)(players[activeBot-1].downY);
 			} else if (players[activeBot-1].currDir == 2) {
 				tarTile = "tile_"+(int)(players[activeBot-1].rightX)+"_"+(int)(players[activeBot-1].downY+distance);
 			} else if (players[activeBot-1].currDir == 3) {
-				tarTile = "tile_"+(int)(players[activeBot-1].xtile-distance)+"_"+(int)(players[activeBot-1].downY);
+				tarTile = "tile_"+(int)(players[activeBot-1].leftX-distance)+"_"+(int)(players[activeBot-1].downY);
 			}
 		}
 		if (gameB.ContainsKey (tarTile))
@@ -808,15 +808,67 @@ public class GameManager : MonoBehaviour {
 		players[activeBot-1].primary(target);
 	}
 	
+	private bool CanThisTurn(Obstacle ob) {
+		if (ob.GetType() == typeof(Bot3)) {
+			double[] checkPos = ((Bot3)ob).turnCorner;
+			
+			double downY = Math.Floor(checkPos[2]/(tileW/2));
+			double upY = Math.Floor(checkPos[0]/(tileW/2));
+			double leftX = Math.Floor(checkPos[3]/(tileW/2));
+			double rightX = Math.Floor(checkPos[1]/(tileW/2));
+			
+			if (downY < mapHeight && upY >= 0 && leftX >= 0 && rightX < mapWidth) {
+				if (!gameB["tile_"+leftX+"_"+upY].walkable(ob))
+					return false;
+				if (!gameB["tile_"+leftX+"_"+downY].walkable(ob))
+					return false;
+				if (!gameB["tile_"+rightX+"_"+upY].walkable(ob))
+					return false;
+				if (!gameB["tile_"+rightX+"_"+downY].walkable(ob))
+					return false;
+			}
+			if (downY >= mapHeight)
+				return false;
+			if (upY < 0)
+				return false;
+			if (leftX < 0)
+				return false;
+			if (rightX >= mapWidth)
+				return false;
+			
+		
+			foreach (Obstacle o in gameObs) {
+				if (o != ob) {
+					getMyCorners(o, o.posX, o.posY);
+					if (upY < o.upY && upY > o.downY && leftX < o.rightX && leftX > o.leftX)
+						return false;
+					if (upY < o.upY && upY > o.downY && rightX < o.rightX && rightX > o.leftX)
+						return false;
+					if (downY < o.upY && downY > o.downY && leftX < o.rightX && leftX > o.leftX)
+						return false;
+					if (downY < o.upY && downY > o.downY && rightX < o.rightX && rightX > o.leftX)
+						return false;
+				}
+			}
+		}
+		return true;
+	}
+	
 	// getMyCorners is called to detect the player position and dimensions, checking if movement will carry the player into a new tile.
 	// This data is used by the moveChar function to decide where to move the player.
 	
 	private void getMyCorners(Obstacle tob, double px, double py)
 	{
-		tob.downYPos = py+tob.width/2-1;
-		tob.upYPos = py;
-		tob.leftXPos = px;
-		tob.rightXPos = px+tob.width/2-1;
+		tob.SetCorners();
+		tob.downYPos += (py - tob.posY);
+		tob.upYPos += (py - tob.posY);
+		tob.leftXPos += (px - tob.posX);
+		tob.rightXPos += (px - tob.posX);
+		
+//		tob.downYPos = py+tob.width/2-1;
+//		tob.upYPos = py;
+//		tob.leftXPos = px;
+//		tob.rightXPos = px+tob.width/2-1;
 		//find corner points
 		tob.downY = Math.Floor(tob.downYPos/(tileW/2));
 		tob.upY = Math.Floor(tob.upYPos/(tileW/2));
@@ -860,6 +912,24 @@ public class GameManager : MonoBehaviour {
 		//if going up
 		if (diry == -1)
 		{
+			if (tob.GetType().IsSubclassOf(typeof(Player))) {
+				if(tob.GetType() == typeof(Bot3)) {
+					Bot3 b3 = (Bot3)tob;
+					if (b3.currDir != 0) {
+						if (!CanThisTurn(tob)) {
+							if(b3.currDir == 2)
+								speedAdj /= 2;
+							else
+								return speedAdj = 0.0;
+						} else {
+							b3.setDir(0);
+							return 0.0;
+						}
+					}
+				} else {
+					((Player)tob).setDir(0);
+				}
+			}
 			if (tob.upleft && tob.upright)
 			{
 				foreach (Obstacle iob in gameObs) {
@@ -890,14 +960,32 @@ public class GameManager : MonoBehaviour {
 				gameB[tarTile].interact (tob);
 				speedAdj = 0;
 			}
-			if (speedAdj != 0 && tob.GetType ().IsSubclassOf (typeof(Player))) {
-				Player p = (Player)tob;
-				p.setDir(0);
-			}
+//			if (speedAdj != 0 && tob.GetType ().IsSubclassOf (typeof(Player))) {
+//				Player p = (Player)tob;
+//				p.setDir(0);
+//			}
 		}
 		//if going down
 		if (diry == 1)
 		{
+			if (tob.GetType().IsSubclassOf(typeof(Player))) {
+				if(tob.GetType() == typeof(Bot3)) {
+					Bot3 b3 = (Bot3)tob;
+					if (b3.currDir != 2) {
+						if (!CanThisTurn(tob)) {
+							if(b3.currDir == 0)
+								speedAdj /= 2;
+							else
+								return speedAdj = 0.0;
+						} else {
+							b3.setDir(2);
+							return 0.0;
+						}
+					}
+				} else {
+					((Player)tob).setDir(2);
+				}
+			}
 			if (tob.downleft && tob.downright)
 			{
 				foreach (Obstacle iob in gameObs) {
@@ -926,10 +1014,10 @@ public class GameManager : MonoBehaviour {
 				gameB[tarTile].interact (tob);
 				speedAdj = 0;
 			}
-			if (speedAdj != 0 && tob.GetType ().IsSubclassOf (typeof(Player))) {
-				Player p = (Player)tob;
-				p.setDir(2);
-			}
+//			if (speedAdj != 0 && tob.GetType ().IsSubclassOf (typeof(Player))) {
+//				Player p = (Player)tob;
+//				p.setDir(2);
+//			}
 		}
 		//horizontal movement
 		//changing x with speed and taking old y
@@ -937,6 +1025,24 @@ public class GameManager : MonoBehaviour {
 		//if going left
 		if (dirx == -1)
 		{
+			if (tob.GetType().IsSubclassOf(typeof(Player))) {
+				if(tob.GetType() == typeof(Bot3)) {
+					Bot3 b3 = (Bot3)tob;
+					if (b3.currDir != 3) {
+						if (!CanThisTurn(tob)) {
+							if(b3.currDir == 1)
+								speedAdj /= 2;
+							else
+								return speedAdj = 0.0;
+						} else {
+							b3.setDir(3);
+							return 0.0;
+						}
+					}
+				} else {
+					((Player)tob).setDir(3);
+				}
+			}
 			if (tob.downleft && tob.upleft)
 			{
 				foreach (Obstacle iob in gameObs) {
@@ -965,14 +1071,32 @@ public class GameManager : MonoBehaviour {
 				gameB[tarTile].interact (tob);
 				speedAdj = 0;
 			}
-			if (speedAdj != 0 && tob.GetType ().IsSubclassOf (typeof(Player))) {
-				Player p = (Player)tob;
-				p.setDir(3);
-			}
+//			if (speedAdj != 0 && tob.GetType ().IsSubclassOf (typeof(Player))) {
+//				Player p = (Player)tob;
+//				p.setDir(3);
+//			}
 		}
 		//if going right
 		if (dirx == 1)
 		{
+			if (tob.GetType().IsSubclassOf(typeof(Player))) {
+				if(tob.GetType() == typeof(Bot3)) {
+					Bot3 b3 = (Bot3)tob;
+					if (b3.currDir != 1) {
+						if (!CanThisTurn(tob)) {
+							if(b3.currDir == 3)
+								speedAdj /= 2;
+							else
+								return speedAdj = 0.0;
+						} else {
+							b3.setDir(1);
+							return 0.0;
+						}
+					}
+				} else {
+					((Player)tob).setDir(1);
+				}
+			}
 			if (tob.upright && tob.downright)
 			{
 				foreach (Obstacle iob in gameObs) {
@@ -1001,10 +1125,10 @@ public class GameManager : MonoBehaviour {
 				gameB[tarTile].interact (tob);
 				speedAdj = 0;
 			}
-			if (speedAdj != 0 && tob.GetType ().IsSubclassOf (typeof(Player))) {
-				Player p = (Player)tob;
-				p.setDir(1);
-			}
+//			if (speedAdj != 0 && tob.GetType ().IsSubclassOf (typeof(Player))) {
+//				Player p = (Player)tob;
+//				p.setDir(1);
+//			}
 		}
 		if (speedAdj == 0)
 			tob.endAction();
