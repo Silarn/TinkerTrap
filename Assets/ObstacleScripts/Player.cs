@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class Player : ObstacleClass, Obstacle
@@ -14,6 +15,9 @@ public abstract class Player : ObstacleClass, Obstacle
 	protected bool playstop = false;
 	protected float stopTime = Time.time;
 	public int level = -1;
+	public bool onActiveElec = false;
+	public Dictionary<string,int> pathDir = new Dictionary<string, int>();
+	public List<string> pathOrder = new List<string>();
 	
 	public Player() : base(1)
 	{

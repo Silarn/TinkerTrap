@@ -9,6 +9,11 @@ public class Bot3 : Player, Obstacle
 	private const double COOLDOWN = 2;
 	private const double DURATION = 0.5;			
 	
+	public double upYPos2;
+	public double downYPos2;
+	public double leftXPos2;
+	public double rightXPos2;
+	
 	public Bot3 ()
 	{
 	}
@@ -25,23 +30,19 @@ public class Bot3 : Player, Obstacle
 		get { return 63; }
 	}
 	
-	public virtual double[] turnCorner {
-		get {
+	public void TurnCorners() {
 			// return same as SetCorners, except backwardes
-			double[] testPos = new double[4];
 			if (currDir == 0 || currDir == 2) {
-				testPos[0] = posY+(length/2)/2;
-				testPos[2] = upYPos+width/2-1;
-				testPos[3] = posX;
-				testPos[1] = leftXPos+length/2-1;
+				upYPos2 = posY+(length/4)/2;
+				downYPos2 = upYPos+width/2-1;
+				leftXPos2 = posX;
+				rightXPos2 = leftXPos+length/2-1;
 			} else { // switch using length/width;
-				testPos[0] = posY;
-				testPos[2] = upYPos+length/2-1;
-				testPos[3] = posX+(length/2)/2;
-				testPos[1] = leftXPos+width/2-1;
+				upYPos2 = posY;
+				downYPos2 = upYPos+length/2-1;
+				leftXPos2 = posX+(length/4)/2;
+				rightXPos2 = leftXPos+width/2-1;
 			}
-			return testPos;
-			}	
 	}
 	
 	public override double getSpeed (double speed)
@@ -86,10 +87,10 @@ public class Bot3 : Player, Obstacle
 		if (currDir == 0 || currDir == 2) {
 			upYPos = posY;
 			downYPos = upYPos+length/2-1;
-			leftXPos = posX+(length/2)/2;
+			leftXPos = posX+(length/4)/2;
 			rightXPos = leftXPos+width/2-1;
 		} else { // switch using length/width for downY and rightX
-			upYPos = posY+(length/2)/2-1;
+			upYPos = posY+(length/4)/2;
 			downYPos = upYPos+width/2-1;
 			leftXPos = posX;
 			rightXPos = leftXPos+length/2-1;

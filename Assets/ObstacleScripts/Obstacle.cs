@@ -38,6 +38,8 @@ public interface Obstacle
 	void endAction();
 	
 	string onTile();
+	string onTileTopR();
+	string onTileBotL();
 	string onTileBotR();
 	
 	void setXY(double x, double y);

@@ -98,7 +98,14 @@ public abstract class ObstacleClass
 		string tileName = "tile_"+leftX+"_"+upY;
 		return tileName;
 	}
-	
+	public string onTileTopR()	{
+		string tileName = "tile_"+rightX+"_"+upY;
+		return tileName;
+	}
+	public string onTileBotL()	{
+		string tileName = "tile_"+leftX+"_"+downY;
+		return tileName;
+	}
 	public string onTileBotR() {
 		string tileName = "tile_"+rightX+"_"+downY;
 		return tileName;
