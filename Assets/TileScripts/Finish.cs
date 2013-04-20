@@ -22,4 +22,7 @@ public class Finish : Floor, Tile {
 	public bool LevelComplete () {
 		return levelComplete;
 	}
+	public void SkipLevel () {
+		levelComplete = true;
+	}
 }

@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour {
 	public Texture2D bot1Texture;
 	public Texture2D bot2Texture;
 	public Texture2D bot3Texture;
-	
+	public Texture2D overlayActive;
 	
 	private int mapWidth = 0;
 	private int mapHeight = 0;
@@ -35,6 +35,7 @@ public class GameManager : MonoBehaviour {
 	private string filePath = "save.xml";
 	private Finish refFinish;
 	private Tile refSpawn;
+	private bool cheats = false;
 	
 	private List<Player> players = new List<Player>();
 	private int activeBot = 1;
@@ -45,6 +46,11 @@ public class GameManager : MonoBehaviour {
 		players.Add (new Bot1()); // Webelo (Red, Lifter)
 		players.Add (new Bot2()); // Hob (Yellow, Hoverer)
 		players.Add (new Bot3()); // Hisco (Green, Wheelie)
+		
+		bot1Texture = Resources.Load ("overlayB1") as Texture2D;
+		bot2Texture = Resources.Load ("overlayB2") as Texture2D;
+		bot3Texture = Resources.Load ("overlayB3") as Texture2D;
+		overlayActive = Resources.Load ("overlayActive") as Texture2D;
 	}
 	
 	void TopMenu() {
@@ -106,10 +112,10 @@ public class GameManager : MonoBehaviour {
 	}
 	void SelectionMenu() {
 	    //layout start
-	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 400));
+	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 600, 400));
 	   
 	    //the menu background box
-	    GUI.Box(new Rect(0, 0, 300, 400), "");
+	    GUI.Box(new Rect(0, 0, 600, 400), "");
 	   
 	    //title
 	    GUI.Label(new Rect(15, 10, 300, 68), "Which robot will you make?");
@@ -119,43 +125,62 @@ public class GameManager : MonoBehaviour {
 		string bot1Text = "Webelo";
 		string bot2Text = "Hob";
 		string bot3Text = "Hisco";
-		if (players[0].level > 0)
+		if (players[0].level > -1)
 			bot1Text = "UPGRADE: Webelo";
-		if (players[1].level > 0)
+		if (players[1].level > -1)
 			bot2Text = "UPGRADE: Hob";
-		if (players[2].level > 0)
+		if (players[2].level > -1)
 			bot3Text = "UPGRADE: Hisco";
 		if (!running) {
-		    if(GUI.Button(new Rect(55, 100, 180, 40), bot1Text)) {
+			Rect selectBot1 = new Rect(55, 100, 180, 40);
+			Rect selectBot2 = new Rect(55, 150, 180, 40);
+			Rect selectBot3 = new Rect(55, 200, 180, 40);
+		    if(GUI.Button(selectBot1, bot1Text)) {
 				running = true;
 				selection = false;
 				activeBot = 1;
 				level++;
 				players[0].level++;
-//				BuildLevel ("level1");
 				BuildLevel ("level"+level);
 				Save ();
 		    }
-		    if(GUI.Button(new Rect(55, 150, 180, 40), bot2Text)) {
+			if (selectBot1.Contains(Event.current.mousePosition)){
+				if (players[0].level == -1)
+					GUI.Label(new Rect(240,100, 200,200),"This robot can push boxes. It has the ability to grab and pull objects.");
+				else
+					GUI.Label(new Rect(240,100, 200,200),"This upgrade will allow the robot to extend its arms up to 3 tiles.");
+			}
+		    if(GUI.Button(selectBot2, bot2Text)) {
 				running = true;
 				selection = false;
 				activeBot = 2;
 				level++;
 				players[1].level++;
-//				BuildLevel ("level1");
 				BuildLevel ("level"+level);
 				Save ();
 		    }
-		    if(GUI.Button(new Rect(55, 200, 180, 40), bot3Text)) {
+			if (selectBot2.Contains(Event.current.mousePosition)){
+				if (players[1].level == -1)
+					GUI.Label(new Rect(240,100, 200,200),"This robot can not push boxes. It has the ability to charge generators it touches " +
+														"and can traverse electrified tiles.");
+				else
+					GUI.Label(new Rect(240,100, 200,200),"Gain the ability to hover over short distances to get over small obstacles and pits.");
+			}
+		    if(GUI.Button(selectBot3, bot3Text)) {
 				running = true;
 				selection = false;
 				activeBot = 3;
 				level++;
 				players[2].level++;
-//				BuildLevel ("level1");
 				BuildLevel ("level"+level);
 				Save ();
 		    }
+			if (selectBot3.Contains(Event.current.mousePosition)){
+				if (players[2].level == -1)
+					GUI.Label(new Rect(240,100, 200,200),"This robot can push boxes. It has the ability to sprint for short periods of time.");
+				else
+					GUI.Label(new Rect(240,100, 200,200),"Upgrade wheel(s) to gain speed on certain tiles and lessen the penalty for pushing objects.");
+			}
 		    //return to main menu
 			if (level == 0)
 		    	if(GUI.Button(new Rect(55, 250, 180, 40), "Return")) {
@@ -171,10 +196,10 @@ public class GameManager : MonoBehaviour {
 	// If you hit Escape while playing the game!
 	void PauseMenu() {
 	    //layout start
-	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 300));
+	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 400));
 	   
 	    //the menu background box
-	    GUI.Box(new Rect(0, 0, 300, 270), "");
+	    GUI.Box(new Rect(0, 0, 300, 350), "");
 	   
 	    //logo picture
 	    GUI.Label(new Rect(94, 15, 300, 40), "Game Paused!");
@@ -184,20 +209,26 @@ public class GameManager : MonoBehaviour {
 	    if(GUI.Button(new Rect(55, 60, 180, 40), "Resume Game")) {
 			paused = false;
 	    }
+		//restart level
+		if(GUI.Button(new Rect(55, 110, 180, 40), "Restart Level")) {
+			paused = false;
+			ClearLevel();
+			BuildLevel("level"+level);
+	    }
 		//gogo editor
-	    if(GUI.Button(new Rect(55, 110, 180, 40), "Editor")) {
+	    if(GUI.Button(new Rect(55, 160, 180, 40), "Editor")) {
 			Application.LoadLevel (1);
 	    }
 		//toggle tutorial
 		if (showMessages) {
-			if(GUI.Button(new Rect(55, 160, 180, 40), "Tutorial: On")) {
+			if(GUI.Button(new Rect(55, 210, 180, 40), "Tutorial: On")) {
 				showMessages = false;		}
 		} else {
-			if(GUI.Button(new Rect(55, 160, 180, 40), "Tutorial: Off")) {
+			if(GUI.Button(new Rect(55, 210, 180, 40), "Tutorial: Off")) {
 				showMessages = true; 	}
 		}
 	    //quit button
-	    if(GUI.Button(new Rect(55, 210, 180, 40), "Quit")) {
+	    if(GUI.Button(new Rect(55, 260, 180, 40), "Quit")) {
 	    	Application.Quit();
 	    }
 	   
@@ -209,13 +240,21 @@ public class GameManager : MonoBehaviour {
 		// Covers entire screen...
 		GUI.BeginGroup (new Rect(0, 0, Screen.width, Screen.height));
 		
+		GUI.Box (new Rect(5+133*(activeBot-1), 5, 133, 261),overlayActive); // Box position emphasises activeBot
+		
 		GUI.Box (new Rect(5, 5, 133, 261), bot1Texture);
 		GUI.Box (new Rect(138, 5, 133, 261), bot2Texture);
 		GUI.Box (new Rect(271, 5, 133, 261), bot3Texture);
+		GUI.Label (new Rect(10, 246, 133, 20), "L: "+players[0].level);
 		GUI.Label (new Rect(5, 266, 133, 20), "1");
+		
+		GUI.Label (new Rect(143, 246, 133, 20), "L: "+players[1].level);
 		GUI.Label (new Rect(138, 266, 133, 20), "2");
+		
+		GUI.Label (new Rect(276, 246, 133, 20), "L: "+players[2].level);
 		GUI.Label (new Rect(271, 266, 133, 20), "3");
 		
+		// Tutorial Message Box
 		if (showMessages && ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1].Count > 0) {
 			int stepMsgs = 0;
 			foreach (KeyValuePair<int,string> kvp in ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1]) {
@@ -246,13 +285,9 @@ public class GameManager : MonoBehaviour {
 			writer.WriteElementString ("Bot2", players[1].level.ToString());
 			writer.WriteElementString ("Bot3", players[2].level.ToString());
 			writer.WriteElementString ("Level", level.ToString());
-			writer.WriteElementString ("Tutorial", showMessages.ToString());
+			writer.WriteElementString ("Tutorial", showMessages.ToString().ToLower());
 			writer.WriteEndDocument ();
 		};
-//		PlayerPrefs.SetInt("Last Level", level);
-//		PlayerPrefs.SetInt("Bot1 Level", players[0].level);
-//		PlayerPrefs.SetInt("Bot2 Level", players[1].level);
-//		PlayerPrefs.SetInt("Bot3 Level", players[2].level);
 	}
 	
 	void LoadFromSave()
@@ -291,9 +326,9 @@ public class GameManager : MonoBehaviour {
 			}
 			read.Close ();
 		}
-		if (players[0].level > 0)
+		if (players[0].level > -1)
 			activeBot = 1;
-		else if (players[1].level > 0)
+		else if (players[1].level > -1)
 			activeBot = 2;
 		else 
 			activeBot = 3;
@@ -308,7 +343,7 @@ public class GameManager : MonoBehaviour {
 				Destroy(o.Value.graphic);
 			}
 			foreach (Obstacle ob in gameObs) {
-				if (ob.GetType() != typeof(Player)) {
+				if (!ob.GetType().IsSubclassOf(typeof(Player))) {
 					Destroy(ob.graphic); 
 				} else {
 					ob.setXY(-100,-100); // Remove Player object from view
@@ -325,7 +360,7 @@ public class GameManager : MonoBehaviour {
 	
 	void BuildLevel(string map)
 	{
-//		map = "Level2Test";	//load this
+//		map = "level2";	//load this
 		TextAsset file = (TextAsset) Resources.Load (map, typeof(TextAsset));
 		OTSprite os;
 		Vector2 pos;
@@ -523,11 +558,21 @@ public class GameManager : MonoBehaviour {
 	void Update() {
 		if (running && !selection) {
 			if (!paused) {
-				
-				//Directional movement. Should this be limited to one direction at a time?
+				// Auto-complete level
+				if (Input.GetKey(KeyCode.G) && Input.GetKey(KeyCode.O)) {
+					refFinish.SkipLevel();
+				}
+				// Upgrade all bots
+				if (!cheats && Input.GetKey(KeyCode.U) && Input.GetKey(KeyCode.P)) {
+					cheats = true;
+					foreach (Player p in players)
+						p.level = 10;
+				}
 				if (Input.GetKeyDown(KeyCode.E))
 				{	DoPrimary (); }
 				
+				if (Input.GetKeyDown (KeyCode.R) && !players[activeBot-1].inAction())
+				{	DoSecondary(); }
 				// Scan for player interaction. This probably needs updating for different bot abilites.
 				
 				if (Input.GetKeyDown(KeyCode.Space))
@@ -543,8 +588,9 @@ public class GameManager : MonoBehaviour {
 							gameObs.Add (players[0]);
 							getMyCorners(players[0],players[0].posX,players[0].posY);
 						}
-						if (gameObs.Contains(players[0]))
+						if (gameObs.Contains(players[0])) {
 							activeBot = 1;
+						}
 					}
 				}
 				if (Input.GetAxis("select2") == 1.0) {
@@ -555,8 +601,9 @@ public class GameManager : MonoBehaviour {
 							gameObs.Add (players[1]);
 							getMyCorners(players[1],players[1].posX,players[1].posY);
 						}
-						if (gameObs.Contains(players[1]))
+						if (gameObs.Contains(players[1])) {
 							activeBot = 2;
+						}
 					}
 				}
 				if (Input.GetAxis("select3") == 1.0) {
@@ -567,8 +614,9 @@ public class GameManager : MonoBehaviour {
 							gameObs.Add (players[2]);
 							getMyCorners(players[2],players[2].posX,players[2].posY);
 						}
-						if (gameObs.Contains(players[2]))
+						if (gameObs.Contains(players[2])) {
 							activeBot = 3;
+						}
 					}
 				}
 			}
@@ -654,7 +702,8 @@ public class GameManager : MonoBehaviour {
 							p.onActiveElec = false;	
 						}
 					}
-					if (p.inAction() ) {							//Actives Bot abilites such as Dash(Bot3) and Hover(Bot2)
+					if (p.inAction() ) {								//Actives Bot abilites such as Dash(Bot3) and Hover(Bot2)
+						Debug.Log ("Player ability interaction");
 						if (p.GetType () != typeof(Bot1)) {
 							if (p.currDir == 0)
 								moveChar(p,5,0,-1);
@@ -664,6 +713,77 @@ public class GameManager : MonoBehaviour {
 								moveChar(p,5,0,1);
 							else if (p.currDir == 3)
 								moveChar(p,5,-1,0);
+						} else {
+							Bot1 b1 = (Bot1)p;
+							int step = b1.ExtendArmsStep();
+							switch(p.currDir){
+								case 0:	getMyCorners(b1,b1.posX,b1.posY-step);
+										break;
+								case 1: getMyCorners(b1,b1.posX+step,b1.posY);
+										break;
+								case 2: getMyCorners(b1,b1.posX,b1.posY+step);
+										break;
+								case 3: getMyCorners(b1,b1.posX-step,b1.posY);
+										break;
+							}
+							if (!b1.downleft || !b1.downright || !b1.upleft || !b1.upright)
+								b1.endAction();
+							if (b1.extendingArms){
+								//ToDo: Move arms out
+								if (b1.grabbing){
+//									Move b1.grabbed out until max distance or until released
+									double spd = 1;
+									switch(b1.currDir){
+										case 0:	spd = moveChar(b1.grabbed,10,0,-1);
+												break;
+										case 1: spd = moveChar(b1.grabbed,10,1,0);
+												break;
+										case 2: spd = moveChar(b1.grabbed,10,0,1);
+												break;
+										case 3: spd = moveChar(b1.grabbed,10,-1,0);
+												break;
+									}
+									if (spd == 0)
+										b1.endAction();
+								} else {
+//									Move arms out until obstacle (when they exist)
+//									if Obstacle is grabbable {
+									foreach (Obstacle o in gameObs) {
+										if (!o.GetType().IsSubclassOf(typeof(Player))) {
+											getMyCorners(o, o.posX, o.posY);
+											if (b1.upYPos < o.downYPos && b1.upYPos > o.upYPos && b1.leftXPos < o.rightXPos && b1.leftXPos > o.leftXPos)
+												b1.Grab(o);
+											if (b1.downYPos < o.downYPos && b1.downYPos > o.upYPos && b1.leftXPos < o.rightXPos && b1.leftXPos > o.leftXPos)
+												b1.Grab(o);
+											if (b1.upYPos < o.downYPos && b1.upYPos > o.upYPos && b1.rightXPos < o.rightXPos && b1.rightXPos > o.leftXPos)
+												b1.Grab(o);
+											if (b1.downYPos < o.downYPos && b1.downYPos > o.upYPos && b1.rightXPos < o.rightXPos && b1.rightXPos > o.leftXPos)
+												b1.Grab(o);
+										}
+										if (b1.grabbing)
+											b1.endAction();
+									}
+//										set obstacle as grabbed
+//										extendingArms = false;
+//									}
+								}
+							} else if (b1.retractArms) {
+								//ToDo: move arms back in
+								if (b1.grabbing) {
+//									Move back with b1.grabbed until interacting with bot1
+									switch(b1.currDir){
+										case 0:	moveChar(b1.grabbed,10,0,1);
+												break;
+										case 1: moveChar(b1.grabbed,10,-1,0);
+												break;
+										case 2: moveChar(b1.grabbed,10,0,-1);
+												break;
+										case 3: moveChar(b1.grabbed,10,1,0);
+												break;
+									}
+								} 
+							} 	
+							getMyCorners(b1,b1.posX,b1.posY);
 						}
 					}
 				}
@@ -846,6 +966,15 @@ public class GameManager : MonoBehaviour {
 		players[activeBot-1].primary(target);
 	}
 	
+	private void DoSecondary() {
+		Debug.Log ("Secondary");
+		if (players[activeBot-1].GetType() == typeof(Bot1)){
+			Bot1 b1 = (Bot1)players[activeBot-1];
+			b1.secondary();
+			
+		}
+	}
+	
 	private bool CanThisTurn(Obstacle ob) {
 		if (ob.GetType() == typeof(Bot3)) {
 			Bot3 b3 = (Bot3)ob;
@@ -978,13 +1107,15 @@ public class GameManager : MonoBehaviour {
 						if ( tob.upYPos < iob.downYPos && tob.downYPos > iob.upYPos &&
 							tob.leftXPos < iob.rightXPos && tob.rightXPos > iob.leftXPos) {
 							speedAdj = moveChar(iob, iob.getSpeed (speedAdj,tob), dirx, diry);
+							if (((Bot1)players[0]).grabbed == iob && tob != players[0] && speedAdj > 0 && !players[0].inAction())
+								players[0].primary(FacingTile(true,0));
 						}
 					}
 				}
 				//post-move player updates
 				if (tob.GetType().IsSubclassOf(typeof(Player))) {
 					//electric tile path pushback set/clear
-					if (tob.GetType() != typeof(Bot2)) {
+					if (tob.GetType() != typeof(Bot2) && !((Player)tob).onActiveElec) {
 						if (gameB[tob.onTile()].GetType() == typeof(Electrified)) {
 							if (!((Player)tob).pathDir.ContainsKey(tob.onTile())) {
 								((Player)tob).pathDir.Add(tob.onTile(),2); 
@@ -999,11 +1130,19 @@ public class GameManager : MonoBehaviour {
 							gameB[tob.onTileBotL()].GetType() != typeof(Electrified) && gameB[tob.onTileBotR()].GetType() != typeof(Electrified)) {
 							((Player)tob).pathDir.Clear();
 							((Player)tob).pathOrder.Clear();
+						} else {
+							if (!((Player)tob).pathDir.ContainsKey(tob.onTile())) {
+								((Player)tob).pathDir.Add(tob.onTile(),2); 
+								((Player)tob).pathOrder.Add (tob.onTile());
+							}
 						}
 					}
-					if (tob.GetType () == typeof(Bot1))
+					if (tob.GetType () == typeof(Bot1)){
+//						foreach (Box a in ((Bot1)tob).arm)
+//							a.setXY(tob.posX,tob.posY);
 						if (((Bot1)tob).grabbing)
 							speedAdj = moveChar (((Bot1)tob).grabbed, ((Bot1)tob).grabbed.getSpeed (speedAdj,tob), dirx, diry);
+					}
 				}
 				// Need alt case where if 'something' then baseSpeed is used (to ignore obstacles)
 				tob.setY((float)(tob.posY+speedAdj*diry));
@@ -1052,17 +1191,19 @@ public class GameManager : MonoBehaviour {
 			if (tob.downleft && tob.downright)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && iob != players[activeBot-1] && tob.vertLift == iob.vertLift) {
+					if (iob != tob && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.downYPos > iob.upYPos && tob.upYPos < iob.downYPos &&
 							tob.leftXPos < iob.rightXPos && tob.rightXPos > iob.leftXPos) {
 							speedAdj = moveChar(iob, iob.getSpeed (speedAdj,tob), dirx, diry);
+							if (((Bot1)players[0]).grabbed == iob && tob != players[0] && speedAdj > 0 && !players[0].inAction())
+								players[0].primary(FacingTile(true,0));
 						}
 					}
 				}
 				if (tob.GetType().IsSubclassOf(typeof(Player))) {
 					//electric tile path pushback set/clear
-					if (tob.GetType() != typeof(Bot2)) {
+					if (tob.GetType() != typeof(Bot2) && !((Player)tob).onActiveElec) {
 						if (gameB[tob.onTileBotL()].GetType() == typeof(Electrified)) {
 							if (!((Player)tob).pathDir.ContainsKey(tob.onTileBotL())) {
 								((Player)tob).pathDir.Add(tob.onTileBotL(),0); 
@@ -1077,6 +1218,11 @@ public class GameManager : MonoBehaviour {
 							gameB[tob.onTileBotL()].GetType() != typeof(Electrified) && gameB[tob.onTileBotR()].GetType() != typeof(Electrified)) {
 							((Player)tob).pathDir.Clear();
 							((Player)tob).pathOrder.Clear();
+						} else {
+							if (!((Player)tob).pathDir.ContainsKey(tob.onTileBotL())) {
+								((Player)tob).pathDir.Add(tob.onTileBotL(),0); 
+								((Player)tob).pathOrder.Add (tob.onTileBotL());
+							}
 						}
 					}
 					if (tob.GetType () == typeof(Bot1))
@@ -1131,17 +1277,19 @@ public class GameManager : MonoBehaviour {
 			if (tob.downleft && tob.upleft)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && iob != players[activeBot-1] && tob.vertLift == iob.vertLift) {
+					if (iob != tob && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.leftXPos < iob.rightXPos && tob.rightXPos > iob.leftXPos &&
 							tob.upYPos < iob.downYPos && tob.downYPos > iob.upYPos) {
 							speedAdj = moveChar(iob, iob.getSpeed (speedAdj,tob), dirx, diry);
+							if (((Bot1)players[0]).grabbed == iob && tob != players[0] && speedAdj > 0 && !players[0].inAction())
+								players[0].primary(FacingTile(true,0));
 						}
 					}
 				}
 				if (tob.GetType().IsSubclassOf(typeof(Player))) {
 					//electric tile path pushback set/clear
-					if (tob.GetType() != typeof(Bot2)) {
+					if (tob.GetType() != typeof(Bot2) && !((Player)tob).onActiveElec) {
 						if (gameB[tob.onTile()].GetType() == typeof(Electrified)) {
 							if (!((Player)tob).pathDir.ContainsKey(tob.onTile())) {
 								((Player)tob).pathDir.Add(tob.onTile(),1); 
@@ -1156,6 +1304,11 @@ public class GameManager : MonoBehaviour {
 							gameB[tob.onTileBotL()].GetType() != typeof(Electrified) && gameB[tob.onTileBotR()].GetType() != typeof(Electrified)) {
 							((Player)tob).pathDir.Clear();
 							((Player)tob).pathOrder.Clear();
+						} else {
+							if (!((Player)tob).pathDir.ContainsKey(tob.onTile())) {
+								((Player)tob).pathDir.Add(tob.onTile(),1); 
+								((Player)tob).pathOrder.Add (tob.onTile());
+							}
 						}
 					}
 					if (tob.GetType () == typeof(Bot1))
@@ -1207,17 +1360,19 @@ public class GameManager : MonoBehaviour {
 			if (tob.upright && tob.downright)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && iob != players[activeBot-1] && tob.vertLift == iob.vertLift) {
+					if (iob != tob && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.rightXPos > iob.leftXPos && tob.leftXPos < iob.rightXPos &&
 							tob.upYPos < iob.downYPos && tob.downYPos > iob.upYPos) {
 							speedAdj = moveChar(iob, iob.getSpeed (speedAdj,tob), dirx, diry);
+							if (((Bot1)players[0]).grabbed == iob && tob != players[0] && speedAdj > 0 && !players[0].inAction())
+								players[0].primary(FacingTile(true,0));
 						}
 					}
 				}
 				if (tob.GetType().IsSubclassOf(typeof(Player))) {
 					//electric tile path pushback set/clear
-					if (tob.GetType() != typeof(Bot2)) {
+					if (tob.GetType() != typeof(Bot2) && !((Player)tob).onActiveElec) {
 						if (gameB[tob.onTileBotR()].GetType() == typeof(Electrified)) {
 							if (!((Player)tob).pathDir.ContainsKey(tob.onTileBotR())) {
 								((Player)tob).pathDir.Add(tob.onTileBotR(),3); 
@@ -1232,6 +1387,11 @@ public class GameManager : MonoBehaviour {
 							gameB[tob.onTileBotL()].GetType() != typeof(Electrified) && gameB[tob.onTileBotR()].GetType() != typeof(Electrified)) {
 							((Player)tob).pathDir.Clear();
 							((Player)tob).pathOrder.Clear();
+						} else {
+							if (!((Player)tob).pathDir.ContainsKey(tob.onTileBotR())) {
+								((Player)tob).pathDir.Add(tob.onTileBotR(),3); 
+								((Player)tob).pathOrder.Add (tob.onTileBotR());
+							}
 						}
 					}
 					if (tob.GetType () == typeof(Bot1))
