@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour {
 	private Dictionary<int, List<Tile>> gameLocksOut = new Dictionary<int, List<Tile>>();
 	private Dictionary<int, List<Tile>> gameLocksIn = new Dictionary<int, List<Tile>>();
 	private List<Obstacle> gameObs = new List<Obstacle>();
+	private List<Dictionary<int, double>> messagesDisplayed = new List<Dictionary<int, double>>(3);
 	
 	private bool running = false;
 	private bool selection = false;
@@ -46,6 +47,10 @@ public class GameManager : MonoBehaviour {
 		players.Add (new Bot1()); // Webelo (Red, Lifter)
 		players.Add (new Bot2()); // Hob (Yellow, Hoverer)
 		players.Add (new Bot3()); // Hisco (Green, Wheelie)
+		
+		messagesDisplayed.Add(new Dictionary<int, double>());
+		messagesDisplayed.Add(new Dictionary<int, double>());
+		messagesDisplayed.Add(new Dictionary<int, double>());
 		
 		bot1Texture = Resources.Load ("overlayB1") as Texture2D;
 		bot2Texture = Resources.Load ("overlayB2") as Texture2D;
@@ -258,16 +263,27 @@ public class GameManager : MonoBehaviour {
 		if (showMessages && ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1].Count > 0) {
 			int stepMsgs = 0;
 			foreach (KeyValuePair<int,string> kvp in ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1]) {
-				if (players[activeBot-1].level >= kvp.Key)
-					stepMsgs += 60;
+				if (players[activeBot-1].level >= kvp.Key){
+					if (messagesDisplayed[activeBot-1].ContainsKey(kvp.Key)){
+						if (messagesDisplayed[activeBot-1][kvp.Key] > Time.time-5)
+							stepMsgs += 60;
+					} else {
+						stepMsgs += 60;
+						messagesDisplayed[activeBot-1].Add(kvp.Key,Time.time);
+					}
+				}
 			}
 			if (stepMsgs > 0)
 				GUI.Box (new Rect(Screen.width-(Screen.width/2)-5, 100, 300,(((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1].Count * 60))," ");
 			stepMsgs = 0;
 			foreach (KeyValuePair<int,string> kvp in ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1]) {
 				if (players[activeBot-1].level >= kvp.Key) {
-					GUI.Label(new Rect(Screen.width-(Screen.width/2),100 + stepMsgs,290,60), kvp.Value);
-					stepMsgs += 60;
+					if (messagesDisplayed[activeBot-1].ContainsKey(kvp.Key)){
+						if (messagesDisplayed[activeBot-1][kvp.Key] > Time.time-5){
+							GUI.Label(new Rect(Screen.width-(Screen.width/2),100 + stepMsgs,290,60), kvp.Value);
+							stepMsgs += 60;
+						}
+					}
 				}
 			}
 		}
@@ -726,8 +742,10 @@ public class GameManager : MonoBehaviour {
 								case 3: getMyCorners(b1,b1.posX-step,b1.posY);
 										break;
 							}
-							if (!b1.downleft || !b1.downright || !b1.upleft || !b1.upright)
+							if (!b1.downleft || !b1.downright || !b1.upleft || !b1.upright) {
+								interact();
 								b1.endAction();
+							}
 							if (b1.extendingArms){
 								//ToDo: Move arms out
 								if (b1.grabbing){
@@ -753,11 +771,11 @@ public class GameManager : MonoBehaviour {
 											getMyCorners(o, o.posX, o.posY);
 											if (b1.upYPos < o.downYPos && b1.upYPos > o.upYPos && b1.leftXPos < o.rightXPos && b1.leftXPos > o.leftXPos)
 												b1.Grab(o);
-											if (b1.downYPos < o.downYPos && b1.downYPos > o.upYPos && b1.leftXPos < o.rightXPos && b1.leftXPos > o.leftXPos)
+											else if (b1.downYPos < o.downYPos && b1.downYPos > o.upYPos && b1.leftXPos < o.rightXPos && b1.leftXPos > o.leftXPos)
 												b1.Grab(o);
-											if (b1.upYPos < o.downYPos && b1.upYPos > o.upYPos && b1.rightXPos < o.rightXPos && b1.rightXPos > o.leftXPos)
+											else if (b1.upYPos < o.downYPos && b1.upYPos > o.upYPos && b1.rightXPos < o.rightXPos && b1.rightXPos > o.leftXPos)
 												b1.Grab(o);
-											if (b1.downYPos < o.downYPos && b1.downYPos > o.upYPos && b1.rightXPos < o.rightXPos && b1.rightXPos > o.leftXPos)
+											else if (b1.downYPos < o.downYPos && b1.downYPos > o.upYPos && b1.rightXPos < o.rightXPos && b1.rightXPos > o.leftXPos)
 												b1.Grab(o);
 										}
 										if (b1.grabbing)
