@@ -37,6 +37,8 @@ public class GameManager : MonoBehaviour {
 	private Finish refFinish;
 	private Tile refSpawn;
 	private bool cheats = false;
+	private double lastClick = 0.0;
+	private bool determineAbility = false;
 	
 	private List<Player> players = new List<Player>();
 	private int activeBot = 1;
@@ -587,6 +589,19 @@ public class GameManager : MonoBehaviour {
 				if (Input.GetKeyDown(KeyCode.E))
 				{	DoPrimary (); }
 				
+				if (Input.GetMouseButtonDown(0)) {
+						Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
+						 if(Math.Abs(mouseLocation.x-64 - players[activeBot-1].xiso) < 64 && Math.Abs(mouseLocation.y-64 - players[activeBot-1].yiso) < 64){
+							if (determineAbility) {
+								determineAbility = false;
+								DoSecondary();
+							} else {
+								determineAbility = true;
+								lastClick = Time.time;
+							}
+						}
+					}
+				
 				if (Input.GetKeyDown (KeyCode.R) && !players[activeBot-1].inAction())
 				{	DoSecondary(); }
 				// Scan for player interaction. This probably needs updating for different bot abilites.
@@ -597,7 +612,7 @@ public class GameManager : MonoBehaviour {
 				// Bot selection... eventually this will only be if you have multiple robots active! (Remove comment below)
 				
 				if (Input.GetAxis("select1") == 1.0) {
-					if (activeBot != 1 /*&& players[0].level >= 0*/) {
+					if (activeBot != 1 && players[0].level >= 0) {
 						if (!gameObs.Contains(players[0]) && TileClear(refSpawn.myName())) {
 							players[0].setXY (refSpawn.xgrid,refSpawn.ygrid);
 							players[0].setDir (0);
@@ -610,10 +625,10 @@ public class GameManager : MonoBehaviour {
 					}
 				}
 				if (Input.GetAxis("select2") == 1.0) {
-					if (activeBot != 2 /*&& players[1].level >= 0*/) {
+					if (activeBot != 2 && players[1].level >= 0) {
 						if (!gameObs.Contains(players[1]) && TileClear(refSpawn.myName())) {
 							players[1].setXY (refSpawn.xgrid,refSpawn.ygrid);
-							players[1].setDir (0);;
+							players[1].setDir (0);
 							gameObs.Add (players[1]);
 							getMyCorners(players[1],players[1].posX,players[1].posY);
 						}
@@ -623,10 +638,10 @@ public class GameManager : MonoBehaviour {
 					}
 				}
 				if (Input.GetAxis("select3") == 1.0) {
-					if (activeBot != 3 /*&& players[2].level >= 0*/) {
+					if (activeBot != 3 && players[2].level >= 0) {
 						if (!gameObs.Contains(players[2]) && TileClear(refSpawn.myName())) {
 							players[2].setXY (refSpawn.xgrid,refSpawn.ygrid);
-							players[2].setDir (players[activeBot-1].currDir);
+							players[2].setDir (0);
 							gameObs.Add (players[2]);
 							getMyCorners(players[2],players[2].posX,players[2].posY);
 						}
@@ -659,9 +674,30 @@ public class GameManager : MonoBehaviour {
 					} else if (Input.GetAxis("vertical") != 0.0) {
 						moveChar(players[activeBot-1], speed, 0, (int)(Math.Round(Input.GetAxis("vertical"),MidpointRounding.AwayFromZero)));
 						movement = true;
-					}
-					
+					} else if (Input.GetMouseButton(0)) {
+						Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
+						double locX = Input.mousePosition.x - Screen.width/2;
+						double locY = Input.mousePosition.y - Screen.height/2;
+						
+						Debug.Log("X = "+locX+", Y = "+locY);
+						if (!(Math.Abs(mouseLocation.x-64 - players[activeBot-1].xiso) < 64 && Math.Abs(mouseLocation.y-64 - players[activeBot-1].yiso) < 64)) {
+							if (locX > 0 && locY > 0)
+								moveChar(players[activeBot-1],speed,0,-1);
+							else if (locX < 0 && locY < 0)
+								moveChar(players[activeBot-1],speed,0,1);
+							else if (locX > 0 && locY < 0)
+								moveChar(players[activeBot-1],speed,1,0);
+							else if (locX < 0 && locY > 0)
+								moveChar(players[activeBot-1],speed,-1,0);
+							movement = true;
+						}
+					}					
 					players[activeBot-1].update (movement);
+				}
+				
+				if (determineAbility && (Time.time - lastClick > 0.2)) {
+					determineAbility = false;
+					DoPrimary();
 				}
 				
 				// Do round 1 of Tile updates. Final 'act' method called in LateUpdate();
