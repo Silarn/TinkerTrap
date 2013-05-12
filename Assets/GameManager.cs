@@ -56,6 +56,7 @@ public class GameManager : MonoBehaviour {
 		messagesDisplayed.Add(new Dictionary<int, double>());
 		messagesDisplayed.Add(new Dictionary<int, double>());
 		
+		logoTexture = Resources.Load ("Logo") as Texture2D;
 		bot1Texture = Resources.Load ("overlayB1") as Texture2D;
 		bot2Texture = Resources.Load ("overlayB2") as Texture2D;
 		bot3Texture = Resources.Load ("overlayB3") as Texture2D;
@@ -64,24 +65,23 @@ public class GameManager : MonoBehaviour {
 	
 	void TopMenu() {
 	    //layout start
-	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 200));
+	    GUI.BeginGroup(new Rect(Screen.width / 2 - 300, 50, 600, 600));
 	   
 	    //the menu background box
 	    GUI.Box(new Rect(0, 0, 300, 200), "");
 	   
 	    //title
-	    GUI.Label(new Rect(15, 10, 300, 38), "TinkerTrap");
-	   
+	   	GUI.Box(new Rect(300-logoTexture.width/2,10,logoTexture.width,logoTexture.height),logoTexture);
 	    ///////main menu buttons
 	    //game start button
-	    if(GUI.Button(new Rect(55, 60, 180, 40), "Start game")) {
+	    if(GUI.Button(new Rect(210, 20+logoTexture.height, 180, 40), "Start game")) {
 			selection = true;
 	    }
-	    if(GUI.Button(new Rect(55, 110, 180, 40), "Editor")) {
+	    if(GUI.Button(new Rect(210, 70+logoTexture.height, 180, 40), "Editor")) {
 			Application.LoadLevel (1);
 	    }
 	    //quit button
-	    if(GUI.Button(new Rect(55, 160, 180, 40), "Quit")) {
+	    if(GUI.Button(new Rect(210, 120+logoTexture.height, 180, 40), "Quit")) {
 	    	Application.Quit();
 	    }
 	   
@@ -202,6 +202,24 @@ public class GameManager : MonoBehaviour {
 	    GUI.EndGroup();
 	}
 	
+	void VictoryMenu() {
+		//layout start
+	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 400));
+		
+		//the menu background box
+	    GUI.Box(new Rect(0, 50, 300, 300), "You're a winner!");
+		
+		if (GUI.Button (new Rect(55,110,180,40),"Main Menu")) {
+			stageSelect = 0;
+			selection = false;
+			level = 0;
+			foreach (Player p in players)
+				p.level = -1;
+		}
+		
+		//layout end
+	    GUI.EndGroup();
+	}
 	// If you hit Escape while playing the game!
 	void PauseMenu() {
 	    //layout start
@@ -375,6 +393,10 @@ public class GameManager : MonoBehaviour {
 			gameLocksIn.Clear();
 			gameLocksOut.Clear ();
 			gameObs.Clear();
+		}
+		// Check if next level exists
+		if (Resources.Load("level"+(level+1)) == null) {
+			stageSelect = 3;
 		}
 	}
 	
@@ -561,6 +583,8 @@ public class GameManager : MonoBehaviour {
 					SelectionMenu();
 				else if (stageSelect == 2)
 					LoadFromSave();
+				else if (stageSelect == 3)
+					VictoryMenu();
 			} else //Goto Main Menu
 			    TopMenu();
 		} else if (paused) {
@@ -840,6 +864,11 @@ public class GameManager : MonoBehaviour {
 							} 	
 							getMyCorners(b1,b1.posX,b1.posY);
 						}
+					}
+					if (p.GetType() == typeof(Bot3)) {
+						Bot3 b3 = (Bot3)p;
+						if (b3.charge > 0)
+							b3.Dissipate();
 					}
 				}
 			}

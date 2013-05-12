@@ -7,7 +7,9 @@ public class Bot3 : Player, Obstacle
 	private double endCooldown = 0.0;
 	private double endDash = 0.0;
 	private const double COOLDOWN = 2;
-	private const double DURATION = 0.5;			
+	private const double DURATION = 0.5;	
+	
+	public double charge = 0.0;
 	
 	public double upYPos2;
 	public double downYPos2;
@@ -34,6 +36,20 @@ public class Bot3 : Player, Obstacle
 		get { return 63; }
 	}
 	
+	public void Charge() {
+		if (level > 0 && charge < 5) {
+			charge+= 0.5;
+			if (charge >= 5) {
+				charge = 5;
+				Debug.Log ("Bot 3 now fully charged");
+			}
+		}
+	}
+	
+	public void Dissipate() {
+		if (charge > 0)
+			charge-= 0.033;
+	}
 	public void TurnCorners() {
 			// return same as SetCorners, except backwardes
 			if (currDir == 0 || currDir == 2) {
