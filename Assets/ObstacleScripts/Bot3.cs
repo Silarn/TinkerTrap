@@ -14,8 +14,12 @@ public class Bot3 : Player, Obstacle
 	public double leftXPos2;
 	public double rightXPos2;
 	
+	public AudioClip audioDash;
+	
 	public Bot3 ()
 	{
+		audioDash = Resources.Load ("propel") as AudioClip;
+		gfx.AddComponent<AudioSource>().clip = audioDash;
 	}
 	
 	public Bot3 (double x, double y)
@@ -56,6 +60,7 @@ public class Bot3 : Player, Obstacle
 	{
 		if (!dashing && Time.time >= endCooldown)
 		{
+			gfx.GetComponent<AudioSource>().Play ();
 			dashing = true;
 			endCooldown = Time.time+COOLDOWN;
 			endDash = Time.time+DURATION;

@@ -50,6 +50,8 @@ public class GameManager : MonoBehaviour {
 		players.Add (new Bot2()); // Hob (Yellow, Hoverer)
 		players.Add (new Bot3()); // Hisco (Green, Wheelie)
 		
+//		camera.GetComponent<AudioListener>().enabled = false;
+		
 		messagesDisplayed.Add(new Dictionary<int, double>());
 		messagesDisplayed.Add(new Dictionary<int, double>());
 		messagesDisplayed.Add(new Dictionary<int, double>());
@@ -710,8 +712,7 @@ public class GameManager : MonoBehaviour {
 					if (p.GetType() != typeof(Bot2)) {			// Push player back when on a powered Elec tile
 						bool needToMove = false;
 						if ( gameB[p.onTile()].GetType() == typeof(Electrified)) {
-//							Electrified e = (Electrified)gameB[p.onTile()];
-							if (((Electrified)gameB[p.onTile()]).on) 
+							if (((Electrified)gameB[p.onTile()]).on)
 								needToMove = true;
 						}
 						if ( !needToMove && gameB[p.onTileTopR()].GetType() == typeof(Electrified)) {
@@ -1029,7 +1030,8 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 	
-	private bool CanThisTurn(Obstacle ob) {
+	private bool CanThisTurn(Obstacle ob, int dir) {
+		bool turn = true;
 		if (ob.GetType() == typeof(Bot3)) {
 			Bot3 b3 = (Bot3)ob;
 			b3.TurnCorners();
@@ -1039,40 +1041,47 @@ public class GameManager : MonoBehaviour {
 			double leftX = Math.Floor(b3.leftXPos2/(tileW/2));
 			double rightX = Math.Floor(b3.rightXPos2/(tileW/2));
 			
+			bool[] open = new bool[4] {true, true, true, true};
+			
 			if (downY < mapHeight && upY >= 0 && leftX >= 0 && rightX < mapWidth) {
 				if (!gameB["tile_"+leftX+"_"+upY].walkable(ob))
-					return false;
+					open[0] = turn = false;
 				if (!gameB["tile_"+leftX+"_"+downY].walkable(ob))
-					return false;
+					open[3] = turn = false;
 				if (!gameB["tile_"+rightX+"_"+upY].walkable(ob))
-					return false;
+					open[1] = turn = false;
 				if (!gameB["tile_"+rightX+"_"+downY].walkable(ob))
-					return false;
+					open[2] = turn = false;
 			}
 			if (downY >= mapHeight)
-				return false;
+				open[2] = open[3] = turn=  false;
 			if (upY < 0)
-				return false;
+				open[0] = open[1] = turn = false;
 			if (leftX < 0)
-				return false;
+				open[0] = open[3] = turn = false;
 			if (rightX >= mapWidth)
-				return false;
+				open[1] = open[2] = turn = false;
 		
 			foreach (Obstacle o in gameObs) {
 				if (o != ob) {
 					getMyCorners(o, o.posX, o.posY);
 					if (b3.upYPos2 < o.downYPos && b3.upYPos2 > o.upYPos && b3.leftXPos2 < o.rightXPos && b3.leftXPos2 > o.leftXPos)
-						return false;
+						open[0] = turn = false;
 					if (b3.downYPos2 < o.downYPos && b3.downYPos2 > o.upYPos && b3.leftXPos2 < o.rightXPos && b3.leftXPos2 > o.leftXPos)
-						return false;
+						open[3] = turn =  false;
 					if (b3.upYPos2 < o.downYPos && b3.upYPos2 > o.upYPos && b3.rightXPos2 < o.rightXPos && b3.rightXPos2 > o.leftXPos)
-						return false;
+						open[1] = turn = false;
 					if (b3.downYPos2 < o.downYPos && b3.downYPos2 > o.upYPos && b3.rightXPos2 < o.rightXPos && b3.rightXPos2 > o.leftXPos)
-						return false;
+						open[2] = turn = false;
+				}
+			}
+			if (!turn) {
+				if ((dir == 3 && open[dir] && open[0]) || (dir != 3 && open[dir] && open[dir+1])) {
+					turn = true;
 				}
 			}
 		}
-		return true;
+		return turn;
 	}
 	
 	// getMyCorners is called to detect the player position and dimensions, checking if movement will carry the player into a new tile.
@@ -1138,7 +1147,7 @@ public class GameManager : MonoBehaviour {
 					if(tob.GetType() == typeof(Bot3)) {
 						Bot3 b3 = (Bot3)tob;
 						if (b3.currDir != 0) {
-							if (!CanThisTurn(tob)) {
+							if (!CanThisTurn(tob, 0)) {
 								if(b3.currDir == 2)
 									speedAdj /= 2;
 								else
@@ -1227,7 +1236,7 @@ public class GameManager : MonoBehaviour {
 					if(tob.GetType() == typeof(Bot3)) {
 						Bot3 b3 = (Bot3)tob;
 						if (b3.currDir != 2) {
-							if (!CanThisTurn(tob)) {
+							if (!CanThisTurn(tob, 2)) {
 								if(b3.currDir == 0)
 									speedAdj /= 2;
 								else
@@ -1313,7 +1322,7 @@ public class GameManager : MonoBehaviour {
 					if(tob.GetType() == typeof(Bot3)) {
 						Bot3 b3 = (Bot3)tob;
 						if (b3.currDir != 3) {
-							if (!CanThisTurn(tob)) {
+							if (!CanThisTurn(tob, 3)) {
 								if(b3.currDir == 1)
 									speedAdj /= 2;
 								else
@@ -1396,7 +1405,7 @@ public class GameManager : MonoBehaviour {
 					if(tob.GetType() == typeof(Bot3)) {
 						Bot3 b3 = (Bot3)tob;
 						if (b3.currDir != 1) {
-							if (!CanThisTurn(tob)) {
+							if (!CanThisTurn(tob, 1)) {
 								if(b3.currDir == 3)
 									speedAdj /= 2;
 								else

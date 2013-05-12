@@ -5,9 +5,15 @@ using System.Collections.Generic;
 public class Button : TileClass, Tile {
 
     private double usedLast = 0.0;
+	
+	public AudioClip[] audioUse = new AudioClip[2];
 
 	public Button(int gx, int gy, int tSet) : base(gx, gy, tSet)
 	{
+		audioUse[0] = Resources.Load("Blip_Select") as AudioClip;
+		audioUse[1] = Resources.Load("Blip_Select_lower") as AudioClip;
+		gfx.AddComponent<AudioSource>().clip = audioUse[0];
+
 		os.PlayOnce(this.GetType ().Name+tSet.ToString()+"_off");
 		locked = true;
 	}
@@ -37,10 +43,14 @@ public class Button : TileClass, Tile {
 						j.interact ();
 				powered = !powered;
 				locked = !locked;
-				if (powered)
+				if (powered) {
+					gfx.GetComponent<AudioSource>().PlayOneShot(audioUse[0]);
 					os.PlayOnce(this.GetType ().Name+tileSet+"_on");
-				else
+				} else {
+					gfx.GetComponent<AudioSource>().PlayOneShot(audioUse[1]);
 					os.PlayOnce(this.GetType ().Name+tileSet+"_off");
+				}
+//				gfx.GetComponent<AudioSource>().Play();
 			}
 			used = false;
 		}

@@ -12,12 +12,14 @@ public class Bot1 : Player, Obstacle
 	public const int STEP_SIZE = 10;
 //	public List<BotArm> arm = new List<BotArm>();
 	public Obstacle grabbed;
+	public AudioClip audioGrab;
 	
 	public Bot1 ()
 	{
 //		arm.Add(new BotArm(1));
 //		arm.Add(new BotArm(1));
-		
+		audioGrab = Resources.Load ("clank") as AudioClip;
+		gfx.AddComponent<AudioSource>().clip = audioGrab;
 	}
 	
 	public Bot1 (double x, double y)
@@ -78,6 +80,7 @@ public class Bot1 : Player, Obstacle
 	
 	public void Grab (Obstacle a) {
 		if (!grabbing) {
+			gfx.GetComponent<AudioSource>().Play ();
 			grabbing = true;
 			grabbed = a;
 			os.PlayOnce (this.GetType ().Name + dirStr (currDir)+"_Grab");

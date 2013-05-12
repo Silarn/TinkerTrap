@@ -8,8 +8,13 @@ public class Generator : TileClass, Tile {
 	private bool botCharge = false;
 	private double endTime = 0.0;
 	
+	public AudioClip audioPowered;
+	
 	public Generator(int gx, int gy, int tSet) : base(gx, gy, tSet)
 	{
+		audioPowered = Resources.Load ("elec_buzz") as AudioClip;
+		gfx.AddComponent<AudioSource>().clip = audioPowered;
+		
 		os.PlayOnce(this.GetType ().Name+tSet.ToString()+"_off");
 		powered = false;
 	}
@@ -59,6 +64,13 @@ public class Generator : TileClass, Tile {
 				used = false;
 				powered = false;
 			}
+		}
+		if (powered) {
+			if (!gfx.GetComponent<AudioSource>().isPlaying)
+					gfx.GetComponent<AudioSource>().Play();
+		} else {
+			if (gfx.GetComponent<AudioSource>().isPlaying)
+					gfx.GetComponent<AudioSource>().Stop();
 		}
 	}
 }
