@@ -25,7 +25,7 @@ public class GameManager : MonoBehaviour {
 	private Dictionary<int, List<Tile>> gameLocksOut = new Dictionary<int, List<Tile>>();
 	private Dictionary<int, List<Tile>> gameLocksIn = new Dictionary<int, List<Tile>>();
 	private List<Obstacle> gameObs = new List<Obstacle>();
-	private List<Dictionary<int, double>> messagesDisplayed = new List<Dictionary<int, double>>(3);
+	private List<Dictionary<double, string>> messagesDisplay = new List<Dictionary<double, string>>(3);
 	
 	private bool running = false;
 	private bool selection = false;
@@ -52,9 +52,9 @@ public class GameManager : MonoBehaviour {
 		
 //		camera.GetComponent<AudioListener>().enabled = false;
 		
-		messagesDisplayed.Add(new Dictionary<int, double>());
-		messagesDisplayed.Add(new Dictionary<int, double>());
-		messagesDisplayed.Add(new Dictionary<int, double>());
+		messagesDisplay.Add(new Dictionary<double, string>());
+		messagesDisplay.Add(new Dictionary<double, string>());
+		messagesDisplay.Add(new Dictionary<double, string>());
 		
 		logoTexture = Resources.Load ("Logo") as Texture2D;
 		bot1Texture = Resources.Load ("overlayB1") as Texture2D;
@@ -283,29 +283,25 @@ public class GameManager : MonoBehaviour {
 		
 		// Tutorial Message Box
 		if (showMessages && ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1].Count > 0) {
+			TileClass curTile = (TileClass)gameB[players[activeBot-1].onTile()];
 			int stepMsgs = 0;
 			foreach (KeyValuePair<int,string> kvp in ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1]) {
 				if (players[activeBot-1].level >= kvp.Key){
-					if (messagesDisplayed[activeBot-1].ContainsKey(kvp.Key)){
-						if (messagesDisplayed[activeBot-1][kvp.Key] > Time.time-5)
-							stepMsgs += 60;
-					} else {
-						stepMsgs += 60;
-						messagesDisplayed[activeBot-1].Add(kvp.Key,Time.time);
+					if (!curTile.msgsRead[activeBot-1].ContainsKey(kvp.Key)){
+						curTile.msgsRead[activeBot-1].Add(kvp.Key,Time.time);
+						messagesDisplay[activeBot-1].Add(Time.time, kvp.Value);
 					}
 				}
 			}
-			if (stepMsgs > 0)
-				GUI.Box (new Rect(Screen.width-(Screen.width/2)-5, 100, 300,(((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1].Count * 60))," ");
-			stepMsgs = 0;
-			foreach (KeyValuePair<int,string> kvp in ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1]) {
-				if (players[activeBot-1].level >= kvp.Key) {
-					if (messagesDisplayed[activeBot-1].ContainsKey(kvp.Key)){
-						if (messagesDisplayed[activeBot-1][kvp.Key] > Time.time-5){
-							GUI.Label(new Rect(Screen.width-(Screen.width/2),100 + stepMsgs,290,60), kvp.Value);
-							stepMsgs += 60;
-						}
-					}
+		}
+		if (showMessages) {
+			int step = 0;
+			foreach (KeyValuePair<double,string> kvp in messagesDisplay[activeBot-1]) {
+				if (kvp.Key > Time.time-8) {
+					GUI.Box(new Rect(Screen.width-(Screen.width/3)-5,50 + step,290,kvp.Value.Length/2), ""); 	//Change if text extends past box
+					GUI.Label(new Rect(Screen.width-(Screen.width/3),50 + step,290,70), kvp.Value);
+				Debug.Log (kvp.Value.Length);
+					step += kvp.Value.Length/2;																	//Change if there is overlapping
 				}
 			}
 		}

@@ -1214,7 +1214,7 @@ public class EditorScript : MonoBehaviour {
 		} else
 			modePicked = false;
 		
-		GUI.Label (new Rect(Screen.width - 78,5,72,222), "Tiles", "box");
+		GUI.Label (new Rect(Screen.width - 78,5,72,(tileList.Length/2+1+tileList.Length%2)*37), "Tiles", "box");
 		for (int i = 0; i < tileList.Length; i++) {
 			GUIStyle buttonStyle;
 			if (tileList[i] == activeSelection)
