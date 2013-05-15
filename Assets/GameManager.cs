@@ -25,7 +25,7 @@ public class GameManager : MonoBehaviour {
 	private Dictionary<int, List<Tile>> gameLocksOut = new Dictionary<int, List<Tile>>();
 	private Dictionary<int, List<Tile>> gameLocksIn = new Dictionary<int, List<Tile>>();
 	private List<Obstacle> gameObs = new List<Obstacle>();
-	private List<Dictionary<double, string>> messagesDisplay = new List<Dictionary<double, string>>(3);
+	private List<Dictionary<string, double>> messagesDisplay = new List<Dictionary<string, double>>(3);
 	
 	private bool running = false;
 	private bool selection = false;
@@ -52,9 +52,9 @@ public class GameManager : MonoBehaviour {
 		
 //		camera.GetComponent<AudioListener>().enabled = false;
 		
-		messagesDisplay.Add(new Dictionary<double, string>());
-		messagesDisplay.Add(new Dictionary<double, string>());
-		messagesDisplay.Add(new Dictionary<double, string>());
+		messagesDisplay.Add(new Dictionary<string, double>());
+		messagesDisplay.Add(new Dictionary<string, double>());
+		messagesDisplay.Add(new Dictionary<string, double>());
 		
 		logoTexture = Resources.Load ("Logo") as Texture2D;
 		bot1Texture = Resources.Load ("overlayB1") as Texture2D;
@@ -289,19 +289,20 @@ public class GameManager : MonoBehaviour {
 				if (players[activeBot-1].level >= kvp.Key){
 					if (!curTile.msgsRead[activeBot-1].ContainsKey(kvp.Key)){
 						curTile.msgsRead[activeBot-1].Add(kvp.Key,Time.time);
-						messagesDisplay[activeBot-1].Add(Time.time, kvp.Value);
+						if (!messagesDisplay[activeBot-1].ContainsKey(kvp.Value))
+							messagesDisplay[activeBot-1].Add(kvp.Value, Time.time);
 					}
 				}
 			}
 		}
 		if (showMessages) {
 			int step = 0;
-			foreach (KeyValuePair<double,string> kvp in messagesDisplay[activeBot-1]) {
-				if (kvp.Key > Time.time-8) {
-					GUI.Box(new Rect(Screen.width-(Screen.width/3)-5,50 + step,290,kvp.Value.Length/2), ""); 	//Change if text extends past box
-					GUI.Label(new Rect(Screen.width-(Screen.width/3),50 + step,290,70), kvp.Value);
-				Debug.Log (kvp.Value.Length);
-					step += kvp.Value.Length/2;																	//Change if there is overlapping
+			foreach (KeyValuePair<string,double> kvp in messagesDisplay[activeBot-1]) {
+				if (kvp.Value > Time.time-8) {
+					GUI.Box(new Rect(Screen.width-(Screen.width/3)-5,50 + step,290,kvp.Key.Length/2), ""); 	//Change if text extends past box
+					GUI.Label(new Rect(Screen.width-(Screen.width/3),50 + step,290,70), kvp.Key);
+				Debug.Log (kvp.Key.Length);
+					step += kvp.Key.Length/2;																	//Change if there is overlapping
 				}
 			}
 		}
@@ -632,43 +633,44 @@ public class GameManager : MonoBehaviour {
 				{	interact();	}
 				
 				// Bot selection... eventually this will only be if you have multiple robots active! (Remove comment below)
-				
-				if (Input.GetAxis("select1") == 1.0) {
-					if (activeBot != 1 && players[0].level >= 0) {
-						if (!gameObs.Contains(players[0]) && TileClear(refSpawn.myName())) {
-							players[0].setXY (refSpawn.xgrid,refSpawn.ygrid);
-							players[0].setDir (0);
-							gameObs.Add (players[0]);
-							getMyCorners(players[0],players[0].posX,players[0].posY);
-						}
-						if (gameObs.Contains(players[0])) {
-							activeBot = 1;
-						}
-					}
-				}
-				if (Input.GetAxis("select2") == 1.0) {
-					if (activeBot != 2 && players[1].level >= 0) {
-						if (!gameObs.Contains(players[1]) && TileClear(refSpawn.myName())) {
-							players[1].setXY (refSpawn.xgrid,refSpawn.ygrid);
-							players[1].setDir (0);
-							gameObs.Add (players[1]);
-							getMyCorners(players[1],players[1].posX,players[1].posY);
-						}
-						if (gameObs.Contains(players[1])) {
-							activeBot = 2;
+				if (!players[activeBot-1].inAction()) {
+					if (Input.GetAxis("select1") == 1.0) {
+						if (activeBot != 1 && players[0].level >= 0) {
+							if (!gameObs.Contains(players[0]) && TileClear(refSpawn.myName())) {
+								players[0].setXY (refSpawn.xgrid,refSpawn.ygrid);
+								players[0].setDir (0);
+								gameObs.Add (players[0]);
+								getMyCorners(players[0],players[0].posX,players[0].posY);
+							}
+							if (gameObs.Contains(players[0])) {
+								activeBot = 1;
+							}
 						}
 					}
-				}
-				if (Input.GetAxis("select3") == 1.0) {
-					if (activeBot != 3 && players[2].level >= 0) {
-						if (!gameObs.Contains(players[2]) && TileClear(refSpawn.myName())) {
-							players[2].setXY (refSpawn.xgrid,refSpawn.ygrid);
-							players[2].setDir (0);
-							gameObs.Add (players[2]);
-							getMyCorners(players[2],players[2].posX,players[2].posY);
+					if (Input.GetAxis("select2") == 1.0) {
+						if (activeBot != 2 && players[1].level >= 0) {
+							if (!gameObs.Contains(players[1]) && TileClear(refSpawn.myName())) {
+								players[1].setXY (refSpawn.xgrid,refSpawn.ygrid);
+								players[1].setDir (0);
+								gameObs.Add (players[1]);
+								getMyCorners(players[1],players[1].posX,players[1].posY);
+							}
+							if (gameObs.Contains(players[1])) {
+								activeBot = 2;
+							}
 						}
-						if (gameObs.Contains(players[2])) {
-							activeBot = 3;
+					}
+					if (Input.GetAxis("select3") == 1.0) {
+						if (activeBot != 3 && players[2].level >= 0) {
+							if (!gameObs.Contains(players[2]) && TileClear(refSpawn.myName())) {
+								players[2].setXY (refSpawn.xgrid,refSpawn.ygrid);
+								players[2].setDir (0);
+								gameObs.Add (players[2]);
+								getMyCorners(players[2],players[2].posX,players[2].posY);
+							}
+							if (gameObs.Contains(players[2])) {
+								activeBot = 3;
+							}
 						}
 					}
 				}
@@ -789,22 +791,27 @@ public class GameManager : MonoBehaviour {
 						} else {
 							Bot1 b1 = (Bot1)p;
 							if (!b1.startExtArms) {
-								int step = b1.ExtendArmsStep();
+								double step = b1.ExtendArmsStep();
 								switch(p.currDir){
-									case 0:	getMyCorners(b1,b1.posX,b1.posY-step);
+									case 0:	
 											b1.hands.setY (b1.posY-step);
+//											moveChar(b1.hands,10,0,-1);
 											break;
-									case 1: getMyCorners(b1,b1.posX+step,b1.posY);
+									case 1: 
 											b1.hands.setX (b1.posX+step);
+//											moveChar(b1.hands,10,1,0);
 											break;
-									case 2: getMyCorners(b1,b1.posX,b1.posY+step);
+									case 2: 
 											b1.hands.setY (b1.posY+step);
+//											moveChar(b1.hands,10,0,1);
 											break;
-									case 3: getMyCorners(b1,b1.posX-step,b1.posY);
+									case 3: 
 											b1.hands.setX (b1.posX-step);
+//											moveChar(b1.hands,10,-1,0);
 											break;
 								}
-								if (!b1.downleft || !b1.downright || !b1.upleft || !b1.upright) {
+								getMyCorners(b1.hands,b1.hands.posX,b1.hands.posY);
+								if (!b1.hands.downleft || !b1.hands.downright || !b1.hands.upleft || !b1.hands.upright) {
 									interact();
 									b1.endAction();
 								}
@@ -823,43 +830,52 @@ public class GameManager : MonoBehaviour {
 											case 3: spd = moveChar(b1.grabbed,10,-1,0);
 													break;
 										}
+										b1.extendDist = b1.extendDist - 10 + spd;
 										if (spd == 0)
 											b1.endAction();
 									} else {
 	//									Move arms out until obstacle (when they exist)
 	//									if Obstacle is grabbable {
 										foreach (Obstacle o in gameObs) {
-											if (!o.GetType().IsSubclassOf(typeof(Player))) {
+											if (o.GetType() != typeof(Bot1)) {
 												getMyCorners(o, o.posX, o.posY);
-												if (b1.upYPos < o.downYPos && b1.upYPos > o.upYPos && b1.leftXPos < o.rightXPos && b1.leftXPos > o.leftXPos)
+												if (b1.hands.upYPos <= o.downYPos && b1.hands.upYPos >= o.upYPos && b1.hands.leftXPos <= o.rightXPos && b1.hands.leftXPos >= o.leftXPos){
 													b1.Grab(o);
-												else if (b1.downYPos < o.downYPos && b1.downYPos > o.upYPos && b1.leftXPos < o.rightXPos && b1.leftXPos > o.leftXPos)
+													b1.endAction();
+												} else if (b1.hands.downYPos <= o.downYPos && b1.hands.downYPos >= o.upYPos && b1.hands.leftXPos <= o.rightXPos && b1.hands.leftXPos >= o.leftXPos) {
 													b1.Grab(o);
-												else if (b1.upYPos < o.downYPos && b1.upYPos > o.upYPos && b1.rightXPos < o.rightXPos && b1.rightXPos > o.leftXPos)
+													b1.endAction();
+												} else if (b1.hands.upYPos <= o.downYPos && b1.hands.upYPos >= o.upYPos && b1.hands.rightXPos <= o.rightXPos && b1.hands.rightXPos >= o.leftXPos) {
 													b1.Grab(o);
-												else if (b1.downYPos < o.downYPos && b1.downYPos > o.upYPos && b1.rightXPos < o.rightXPos && b1.rightXPos > o.leftXPos)
+													b1.endAction();
+												} else if (b1.hands.downYPos <= o.downYPos && b1.hands.downYPos >= o.upYPos && b1.hands.rightXPos <= o.rightXPos && b1.hands.rightXPos >= o.leftXPos){
 													b1.Grab(o);
+													b1.endAction();
+												}
 											}
-											if (b1.grabbing)
-												b1.endAction();
+//											if (b1.grabbing)
+//												b1.endAction();
 										}
-	//										set obstacle as grabbed
-	//										extendingArms = false;
-	//									}
 									}
 								} else if (b1.retractArms) {
 									//ToDo: move arms back in
 									if (b1.grabbing) {
+										double mov = 0.0;
 	//									Move back with b1.grabbed until interacting with bot1
 										switch(b1.currDir){
-											case 0:	moveChar(b1.grabbed,10,0,1);
+											case 0:	mov = moveChar(b1.grabbed,10,0,1);
 													break;
-											case 1: moveChar(b1.grabbed,10,-1,0);
+											case 1: mov = moveChar(b1.grabbed,10,-1,0);
 													break;
-											case 2: moveChar(b1.grabbed,10,0,-1);
+											case 2: mov = moveChar(b1.grabbed,10,0,-1);
 													break;
-											case 3: moveChar(b1.grabbed,10,1,0);
+											case 3: mov = moveChar(b1.grabbed,10,1,0);
 													break;
+										}
+										b1.extendDist = b1.extendDist + 10 - mov;
+										if (mov == 0) {
+											b1.grabbed = null;
+											b1.grabbing = false;
 										}
 									} 
 								} 	
@@ -901,6 +917,7 @@ public class GameManager : MonoBehaviour {
 			}
 			
 			List<Obstacle> orderedObs = new List<Obstacle>(gameObs.Count);
+			orderedObs.Add(((Bot1)players[0]).hands);
 			foreach (Obstacle i in gameObs) {
 				int insertAfter = -1;
 				for (int j = 0; j < orderedObs.Capacity; j++) {
@@ -1196,7 +1213,7 @@ public class GameManager : MonoBehaviour {
 			if (tob.upleft && tob.upright)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && iob != players[activeBot-1] && tob.vertLift == iob.vertLift) {
+					if (iob != tob && (iob != players[activeBot-1] || iob.inAction()) && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.upYPos < iob.downYPos && tob.downYPos > iob.upYPos &&
 							tob.leftXPos < iob.rightXPos && tob.rightXPos > iob.leftXPos) {
@@ -1285,7 +1302,7 @@ public class GameManager : MonoBehaviour {
 			if (tob.downleft && tob.downright)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && tob.vertLift == iob.vertLift) {
+					if (iob != tob && (iob != players[activeBot-1] || iob.inAction()) && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.downYPos > iob.upYPos && tob.upYPos < iob.downYPos &&
 							tob.leftXPos < iob.rightXPos && tob.rightXPos > iob.leftXPos) {
@@ -1371,7 +1388,7 @@ public class GameManager : MonoBehaviour {
 			if (tob.downleft && tob.upleft)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && tob.vertLift == iob.vertLift) {
+					if (iob != tob && (iob != players[activeBot-1] || iob.inAction()) && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.leftXPos < iob.rightXPos && tob.rightXPos > iob.leftXPos &&
 							tob.upYPos < iob.downYPos && tob.downYPos > iob.upYPos) {
@@ -1454,7 +1471,7 @@ public class GameManager : MonoBehaviour {
 			if (tob.upright && tob.downright)
 			{
 				foreach (Obstacle iob in gameObs) {
-					if (iob != tob && tob.vertLift == iob.vertLift) {
+					if (iob != tob && (iob != players[activeBot-1] || iob.inAction()) && tob.vertLift == iob.vertLift) {
 						getMyCorners(iob, iob.posX, iob.posY);
 						if ( tob.rightXPos > iob.leftXPos && tob.leftXPos < iob.rightXPos &&
 							tob.upYPos < iob.downYPos && tob.downYPos > iob.upYPos) {

@@ -8,7 +8,7 @@ public class Bot1 : Player, Obstacle
 	public bool extendingArms = false;
 	public bool retractArms = false;
 	public bool startExtArms = false;
-	public int extendDist = 0;
+	public double extendDist = 0;
 	public const int EXTEND_MAX = 192;
 	public const int STEP_SIZE = 10;
 	public Hands hands;
@@ -97,18 +97,20 @@ public class Bot1 : Player, Obstacle
 	}
 	
 	public void Grab (Obstacle a) {
-		if (!grabbing) {
+		if (!grabbing && !a.GetType().IsSubclassOf(typeof(Player))) {
 			gfx.GetComponent<AudioSource>().Play ();
 			grabbing = true;
 			grabbed = a;
-			os.PlayOnce (this.GetType ().Name + dirStr (currDir)+"_Grab");
+			if (!inAction())
+				os.PlayOnce (this.GetType ().Name + dirStr (currDir)+"_Grab");
 		}
 	}
 	
 	public void Release() {
 		grabbing = false;
 		grabbed = null;
-		os.PlayOnceBackward (this.GetType ().Name + dirStr (currDir)+"_Grab");
+		if (!inAction())
+			os.PlayOnceBackward (this.GetType ().Name + dirStr (currDir)+"_Grab");
 		if (extendingArms){
 			extendingArms = false;
 			retractArms = true;
@@ -130,7 +132,7 @@ public class Bot1 : Player, Obstacle
 //		retractArms = false;
 	}
 	
-	public int ExtendArmsStep() {
+	public double ExtendArmsStep() {
 		if (extendingArms){
 			extendDist += STEP_SIZE;
 			if (extendDist > EXTEND_MAX) {
@@ -140,9 +142,11 @@ public class Bot1 : Player, Obstacle
 		}
 		if (retractArms){
 			extendDist -= STEP_SIZE;
-			if (extendDist < 0) {
+			if (extendDist <= 0) {
 				retractArms = false;
 				hands.os.visible = false;
+				if (grabbing)
+					os.PlayOnce (this.GetType ().Name + dirStr (currDir)+"_Grab");
 			}
 		}
 //		hands.setX(leftXPos);
@@ -151,45 +155,8 @@ public class Bot1 : Player, Obstacle
 		return extendDist;
 	}
 	
-	public bool ExtendArmsAction (List<Obstacle> gObs) {			// Return true if there is a object to move? Could just check grabbed.
-		if (upleft || upright || downleft || downright){	//remove this when arm objects in place
-			return extendingArms = false;
-		}
-		if (extendingArms && !grabbing) {
-			foreach (Obstacle o in gObs) {
-				if (o != this) {
-//					getMyCorners(o, o.posX, o.posY);
-					if (upYPos < o.downYPos && upYPos > o.upYPos && leftXPos < o.rightXPos && leftXPos > o.leftXPos)
-						Grab(o);
-					if (downYPos < o.downYPos && downYPos > o.upYPos && leftXPos < o.rightXPos && leftXPos > o.leftXPos)
-						Grab(o);
-					if (upYPos < o.downYPos && upYPos > o.upYPos && rightXPos < o.rightXPos && rightXPos > o.leftXPos)
-						Grab(o);
-					if (downYPos < o.downYPos && downYPos > o.upYPos && rightXPos < o.rightXPos && rightXPos > o.leftXPos)
-						Grab(o);
-				}
-			}
-			if (grabbing){
-				extendingArms = false;
-				return true;
-			}
-		} else if (extendingArms && grabbing) {
-			foreach (Obstacle o in gObs) {
-				if (o != this && o != grabbed) {
-//					getMyCorners(o, o.posX, o.posY);
-					if (grabbed.upYPos < o.downYPos && grabbed.upYPos > o.upYPos && grabbed.leftXPos < o.rightXPos && grabbed.leftXPos > o.leftXPos)
-						return extendingArms = false;
-					if (grabbed.downYPos < o.downYPos && grabbed.downYPos > o.upYPos && grabbed.leftXPos < o.rightXPos && grabbed.leftXPos > o.leftXPos)
-						return extendingArms = false;
-					if (grabbed.upYPos < o.downYPos && grabbed.upYPos > o.upYPos && grabbed.rightXPos < o.rightXPos && grabbed.rightXPos > o.leftXPos)
-						return extendingArms = false;
-					if (grabbed.downYPos < o.downYPos && grabbed.downYPos > o.upYPos && grabbed.rightXPos < o.rightXPos && grabbed.rightXPos > o.leftXPos)
-						return extendingArms = false;
-				}
-			}
-			return true;
-		}
+	public bool ExtendArmsAction (List<Obstacle> gObs) {			
 		
-		return false;
+		return true;
 	}
 }
