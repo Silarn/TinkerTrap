@@ -32,10 +32,12 @@ public class Generator : TileClass, Tile {
 			endTime = Time.time+8;
 		} else if (a.GetType() == typeof(Bot3)) {
 			b3 = (Bot3)a;
-			b3.charged = this;
-			b3.charge = 0.0;
-			botCharge = true;
-			endTime = Time.time+8;
+			if (b3.charge > 0) {
+				b3.charged = this;
+				b3.charge = 0.0;
+//				botCharge = true;
+//			endTime = Time.time+8;
+			}
 		}
 	}
 	

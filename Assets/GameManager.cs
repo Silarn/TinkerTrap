@@ -284,13 +284,15 @@ public class GameManager : MonoBehaviour {
 				}
 			}
 		}
-		if (showMessages) {
+		if (showMessages && messagesDisplay[activeBot-1].Count > 0) {
 			int step = 0;
-			foreach (KeyValuePair<string,double> kvp in messagesDisplay[activeBot-1]) {
-				if (kvp.Value > Time.time-8) {
-					GUI.Box(new Rect(Screen.width-(Screen.width/3)-5,50 + step,290,kvp.Key.Length/2), ""); 	//Change if text extends past box
-					GUI.Label(new Rect(Screen.width-(Screen.width/3),50 + step,290,70), kvp.Key);
-				Debug.Log (kvp.Key.Length);
+			List<KeyValuePair<string,double>> tempVals = new List<KeyValuePair<string, double>>(messagesDisplay[activeBot-1]);
+			foreach (KeyValuePair<string,double> kvp in tempVals) {
+				if (kvp.Value > Time.time-30) {
+					if (GUI.Button(new Rect(Screen.width-(Screen.width/3)-5,55 + step,290,kvp.Key.Length/2), "")) { 	//Change if text extends past box
+						messagesDisplay[activeBot-1][kvp.Key] = Time.time-30;
+					}
+					GUI.Label(new Rect(Screen.width-(Screen.width/3),52 + step,290,70), kvp.Key);
 					step += kvp.Key.Length/2;																	//Change if there is overlapping
 				}
 			}
@@ -555,6 +557,7 @@ public class GameManager : MonoBehaviour {
 				}
 			}
 		}
+		messagesDisplay[activeBot-1].Add("These messages can be removed early by clicking on them. Or turned off from the paused screen.",Time.time);
 	}
 	
 	void OnGUI () {
