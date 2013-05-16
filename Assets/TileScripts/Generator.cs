@@ -7,6 +7,7 @@ public class Generator : TileClass, Tile {
 	private Battery bat = null;
 	private bool botCharge = false;
 	private double endTime = 0.0;
+	private Bot3 b3;
 	
 	public AudioClip audioPowered;
 	
@@ -30,6 +31,9 @@ public class Generator : TileClass, Tile {
 			botCharge = true;
 			endTime = Time.time+8;
 		} else if (a.GetType() == typeof(Bot3)) {
+			b3 = (Bot3)a;
+			b3.charged = this;
+			b3.charge = 0.0;
 			botCharge = true;
 			endTime = Time.time+8;
 		}
@@ -44,6 +48,17 @@ public class Generator : TileClass, Tile {
 	}
 	
 	public override void act(List<Obstacle> objs) {
+		if (b3 != null && b3.charged == this) {
+			if (powered == false) {
+				os.PlayOnce(this.GetType ().Name+tileSet.ToString()+"_on");
+				powered = true;
+			}
+		} else {
+			if (powered == true) {
+				powered = false;
+					os.PlayOnce(this.GetType ().Name+tileSet.ToString()+"_off");
+			}
+		}
 		if (botCharge == true) {
 			if (powered == false) {
 				os.PlayOnce(this.GetType ().Name+tileSet.ToString()+"_on");

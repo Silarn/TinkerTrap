@@ -30,7 +30,7 @@ public class Charge : Floor, Tile {
 	public override void update ()
 	{
 		if (refBot3 != null) {
-		if (occupied || refBot3.charge > 0) {
+		if (occupied || refBot3.level > 0) {
 			refBot3.Charge();
 			os.PlayOnce (this.GetType ().Name+tileSet.ToString ()+"_link");
 		} else

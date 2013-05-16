@@ -10,6 +10,7 @@ public class Bot3 : Player, Obstacle
 	private const double DURATION = 0.5;	
 	
 	public double charge = 0.0;
+	public TileClass charged = null;
 	
 	public double upYPos2;
 	public double downYPos2;
@@ -47,8 +48,8 @@ public class Bot3 : Player, Obstacle
 	}
 	
 	public void Dissipate() {
-		if (charge > 0)
-			charge-= 0.033;
+//		if (charge > 0)
+//			charge-= 0.033;
 	}
 	public void TurnCorners() {
 			// return same as SetCorners, except backwardes
