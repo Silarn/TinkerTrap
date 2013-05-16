@@ -59,7 +59,7 @@ public abstract class ObstacleClass
 	
 	public int depth {
 		get {
-			int depthshift = ((int)(GameManager.getTileW ())-width/2)/2;
+			int depthshift = ((int)(GameManager.getTileW ())-width/2)/2-33;
 			return ((int)(yiso)-depthshift)*300+(int)(xiso)+1;
 		}
 	}
