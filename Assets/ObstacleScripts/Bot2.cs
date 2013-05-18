@@ -33,7 +33,7 @@ public class Bot2 : Player, Obstacle
 				&& ( (r1.GetType().IsSubclassOf(typeof(Floor)) || r1.GetType() == typeof(Floor)) && r2.GetType() != typeof(Pit) && r2.walkable() ) ) {
 				hoverTargetL = l2.myName();
 				hoverTargetR = r2.myName();
-				vertLift = 1;
+				vertLift = 20;
 				hovering = true;
 				os.PlayOnce (this.GetType ().Name + dirStr (currDir)+"_Hover");
 			}

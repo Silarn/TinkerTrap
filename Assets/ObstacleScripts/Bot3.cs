@@ -10,6 +10,7 @@ public class Bot3 : Player, Obstacle
 	private const double DURATION = 0.5;	
 	
 	public Charge chargeTile = null;
+	private double chargeEnd = 0.0;
 	
 	public double upYPos2;
 	public double downYPos2;
@@ -107,7 +108,8 @@ public class Bot3 : Player, Obstacle
 	
 	public Charge ChargeSource {
 		get { return chargeTile; }
-		set { chargeTile = value; }
+		set { chargeTile = value;
+			  chargeEnd = Time.time+8; }
 	}
 	
 	public void TurnCorners() {
@@ -145,6 +147,9 @@ public class Bot3 : Player, Obstacle
 	
 	public override bool inAction()
 	{
+		//Remove charge, if it still exists, after timeframe
+		if (chargeTile != null && Time.time >= chargeEnd) {
+			chargeTile = null;	}
 		//Dash Conditions
 		if (!dashing || Time.time >= endDash){
 			dashing = false;

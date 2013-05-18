@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour {
 	public Texture2D logoTexture;
 	public Texture2D bot1Blueprint, bot2Blueprint, bot3Blueprint;
 	public Texture2D overlayActive;
+	public Texture2D overlayAbility;
 	
 	public GUIStyle buttonStyle;
 	
@@ -63,6 +64,7 @@ public class GameManager : MonoBehaviour {
 		messagesDisplay.Add(new Dictionary<string, double>());
 		messagesDisplay.Add(new Dictionary<string, double>());
 		
+		overlayAbility = Resources.Load("overlayActive") as Texture2D;
 		
 		bot1Port = OT.CreateObject ("PortraitSprite");
 		bot2Port = OT.CreateObject ("PortraitSprite");
@@ -88,10 +90,15 @@ public class GameManager : MonoBehaviour {
 	    //game start button
 	    if(GUI.Button(new Rect(162.5f, 20+logoTexture.height, 275, 75), "Start game", buttonStyle)) {
 			selection = true;
+			stageSelect = 0;
 	    }
-	    if(GUI.Button(new Rect(162.5f, 100+logoTexture.height, 275, 75), "Editor", buttonStyle)) {
-			Application.LoadLevel (1);
+		if(GUI.Button(new Rect(162.5f, 100+logoTexture.height, 275, 75), "Controls", buttonStyle)) {
+			selection = true;
+			stageSelect = 4;
 	    }
+//	    if(GUI.Button(new Rect(162.5f, 100+logoTexture.height, 275, 75), "Editor", buttonStyle)) {
+//			Application.LoadLevel (1);
+//	    }
 	    //quit button
 	    if(GUI.Button(new Rect(162.5f, 180+logoTexture.height, 275, 75), "Quit", buttonStyle)) {
 	    	Application.Quit();
@@ -101,6 +108,22 @@ public class GameManager : MonoBehaviour {
 	    GUI.EndGroup();
 	}
 	
+	void ControlsMenu() {
+		//layout
+		GUI.BeginGroup(new Rect(Screen.width / 2 - 350, 50, 700, 600));
+		
+		GUI.Label (new Rect(0,0,300,500),"Keyboard Controls\n\nMovement\n Forward: \tW / UpArrow\n Back: \t\t\tS / DownArrow\n Left: \t\t\tA / LeftArrow\n Right: \t\t\tD / RightArrow\n\n" +
+			"Abilities\n Primary: \tE\n Secondary: \tR");
+		
+		GUI.Label (new Rect(400,0,300,500),"Mouse Controls\n\nMovement\n Hold the left mouse button down on the screen in the direction you want to travel.\n\n\n" +
+			"Abilities\n Primary: Click once on the robot\n Secondary: Double-click on the robot");
+		
+		if (GUI.Button(new Rect(200,500,300,80),"Back",buttonStyle)) {
+			selection = false;
+		}
+		
+		GUI.EndGroup();
+	}
 	void StageSelectMenu() {
 		//layout start
 	    GUI.BeginGroup(new Rect(Screen.width / 2 - 150, 50, 300, 400));
@@ -279,10 +302,15 @@ public class GameManager : MonoBehaviour {
 		
 		//GUI.Label (new Rect(276, 246, 133, 20), "L: "+players[2].level);
 		
+		// Show when mouse is over location to activate abilities
+		Vector2 botOnScreen = Camera.main.WorldToScreenPoint(players[activeBot-1].os.position);
+		Rect overBot = new Rect(botOnScreen.x,botOnScreen.y-128,128,128);
+		if (overBot.Contains(Event.current.mousePosition)) {
+			GUI.DrawTexture(overBot,overlayAbility);
+		}
 		// Tutorial Message Box
 		if (showMessages && ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1].Count > 0) {
 			TileClass curTile = (TileClass)gameB[players[activeBot-1].onTile()];
-			int stepMsgs = 0;
 			foreach (KeyValuePair<int,string> kvp in ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1]) {
 				if (players[activeBot-1].level >= kvp.Key){
 					if (!curTile.msgsRead[activeBot-1].ContainsKey(kvp.Key)){
@@ -589,6 +617,8 @@ public class GameManager : MonoBehaviour {
 					LoadFromSave();
 				else if (stageSelect == 3)
 					VictoryMenu();
+				else if (stageSelect == 4)
+					ControlsMenu();
 			} else //Goto Main Menu
 			    TopMenu();
 		} else if (paused) {
@@ -621,17 +651,20 @@ public class GameManager : MonoBehaviour {
 				{	DoPrimary (); }
 				
 				if (Input.GetMouseButtonDown(0)) {
-						Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
-						 if(Math.Abs(mouseLocation.x-64 - players[activeBot-1].xiso) < 64 && Math.Abs(mouseLocation.y-64 - players[activeBot-1].yiso) < 64){
-							if (determineAbility) {
-								determineAbility = false;
-								DoSecondary();
-							} else {
+					Vector3 mouseLocation = camera.ScreenToWorldPoint (Input.mousePosition);
+					mouseLocation.x -= 64;
+					mouseLocation.y -= 64;
+					if (Vector2.Distance(mouseLocation,players[activeBot-1].os.position) < 50) {
+//					if(Math.Abs(mouseLocation.x-64 - players[activeBot-1].xiso) < 64 && Math.Abs(mouseLocation.y-64 - players[activeBot-1].yiso) < 64){
+						if (determineAbility) {
+							determineAbility = false;
+							DoSecondary();
+						} else {
 								determineAbility = true;
 								lastClick = Time.time;
-							}
 						}
 					}
+				}
 				
 				if (Input.GetKeyDown (KeyCode.R) && !players[activeBot-1].inAction())
 				{	DoSecondary(); }
