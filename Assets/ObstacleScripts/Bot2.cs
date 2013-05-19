@@ -14,6 +14,7 @@ public class Bot2 : Player, Obstacle
 		audioHover = gfx.AddComponent<AudioSource>();
 		idleHover = gfx.AddComponent<AudioSource>();
 		audioHover.clip = Resources.Load ("hover") as AudioClip;
+		audioHover.volume = 0.2f;
 		//idleHover.clip = Resources.Load ("electric_hover") as AudioClip;
 	}
 

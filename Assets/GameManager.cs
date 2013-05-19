@@ -624,7 +624,8 @@ public class GameManager : MonoBehaviour {
 				}
 			}
 		}
-		messagesDisplay[activeBot-1].Add("These messages can be removed early by clicking on them. Or turned off from the paused screen.",Time.time);
+		if (!messagesDisplay[activeBot-1].ContainsKey("These messages can be removed early by clicking on them. Or turned off from the paused screen."))
+			messagesDisplay[activeBot-1].Add("These messages can be removed early by clicking on them. Or turned off from the paused screen.",Time.time);
 	}
 	
 	void OnGUI () {
@@ -1132,9 +1133,11 @@ public class GameManager : MonoBehaviour {
 				return;
 			else {
 				// Check that no obstacle is on the ending tiles
-				if (TileClear(left2.myName()) && TileClear(right2.myName())) {
+				if (TileClear(left2.myName()) && TileClear(right2.myName()) && left2.GetType() != typeof(Pit) && left2.walkable() && right2.GetType() != typeof(Pit) && right2.walkable()) {
 					((Bot2)players[activeBot-1]).primary(left1,left2,right1,right2);
 					return;
+				} else if (TileClear (left1.myName()) && TileClear (right1.myName())) {
+					((Bot2)players[activeBot-1]).primary(left1,left1,right1,right1);
 				} else {
 					return;
 				}
