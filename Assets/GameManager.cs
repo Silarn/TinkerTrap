@@ -134,6 +134,10 @@ public class GameManager : MonoBehaviour {
 		if(GUI.Button(new Rect(12.5f, 100, 275, 75), "New Game", buttonStyle)) {
 			// Proceed to SelectionMenu
 			stageSelect = 1;
+			//Reset to defaults
+			level = 0;
+			foreach (Player p in players)
+				p.level = -1;
 		}
 		if (File.Exists(filePath))
 			if(GUI.Button(new Rect(12.5f, 180, 275, 75), "Continue", buttonStyle)) {
@@ -283,6 +287,7 @@ public class GameManager : MonoBehaviour {
 			running = false;
 			selection = false;
 			stageSelect = 0;
+//			level = 0;
 			ClearLevel ();
 	    }
 	   
