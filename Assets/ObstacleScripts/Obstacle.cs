@@ -10,7 +10,9 @@ public interface Obstacle
 		string tileName = "tile_"+xtile+"_"+ytile;
 		return tileName;
 	}*/
-	
+	string spawnLoc {get; }
+	double spawnX {get; }
+	double spawnY {get; }
 	int width { get; }
 	int length { get; }
 	int vertLift {get; set; }

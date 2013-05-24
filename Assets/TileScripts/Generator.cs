@@ -24,7 +24,6 @@ public class Generator : TileClass, Tile {
 	public override void interact(Obstacle a)
 	{
 		if (a.GetType () == typeof(Battery) && bat == null) {
-			used = true;
 			bat = (Battery)a;
 			bat.charge(this);
 		} else if (a.GetType () == typeof(Bot2)) {
@@ -44,10 +43,7 @@ public class Generator : TileClass, Tile {
 	
 	public void batteryLoss(Battery b) {
 		if (b == bat)
-		{
-			used = true;
 			bat = null;
-		}
 	}
 	
 	public void removeCharge() {
@@ -55,7 +51,7 @@ public class Generator : TileClass, Tile {
 	}
 	
 	public override void act(List<Obstacle> objs) {
-		if (chargeTile != null || used) {
+		if (chargeTile != null || bat != null) {
 			if (powered == false) {
 				os.PlayOnce(this.GetType ().Name+tileSet.ToString()+"_on");
 				powered = true;

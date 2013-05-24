@@ -70,6 +70,10 @@ public abstract class Player : ObstacleClass, Obstacle
 	{
 		this.primary(a);
 	}
+	public virtual void ResetTargetObstacle(Obstacle ob) {
+		ob.setXY(ob.spawnX,ob.spawnY);
+	}
+	
 	// ADD: Method to determine coordinates, currently in GameManager.moveChar
 	// ADD: Method to determine coordinate area to perform a turn.
 	

@@ -28,7 +28,7 @@ public class GameManager : MonoBehaviour {
 	private Dictionary<int, List<Tile>> gameLocksOut = new Dictionary<int, List<Tile>>();
 	private Dictionary<int, List<Tile>> gameLocksIn = new Dictionary<int, List<Tile>>();
 	private List<Obstacle> gameObs = new List<Obstacle>();
-	private List<Dictionary<string, double>> messagesDisplay = new List<Dictionary<string, double>>(3);
+	private List<Dictionary<string, bool>> messagesDisplay = new List<Dictionary<string, bool>>(3);
 	
 	private float introLoc = Screen.width;
 	private float timeTracker;
@@ -45,6 +45,8 @@ public class GameManager : MonoBehaviour {
 	private bool cheats = false;
 	private double lastClick = 0.0;
 	private bool determineAbility = false;
+	private double timeoutCounter = 0.0;
+	private const double TIMEOUT_LIMIT = 90.0;
 	
 	private GameObject bot1Port;
 	private GameObject bot2Port;
@@ -66,9 +68,9 @@ public class GameManager : MonoBehaviour {
 		
 //		camera.GetComponent<AudioListener>().enabled = false;
 		
-		messagesDisplay.Add(new Dictionary<string, double>());
-		messagesDisplay.Add(new Dictionary<string, double>());
-		messagesDisplay.Add(new Dictionary<string, double>());
+		messagesDisplay.Add(new Dictionary<string, bool>());
+		messagesDisplay.Add(new Dictionary<string, bool>());
+		messagesDisplay.Add(new Dictionary<string, bool>());
 		
 		overlayAbility = Resources.Load("overlayActive") as Texture2D;
 		
@@ -153,6 +155,7 @@ public class GameManager : MonoBehaviour {
 			stageSelect = 1;
 			//Reset to defaults
 			level = 0;
+			showMessages = true;
 			foreach (Player p in players)
 				p.level = -1;
 		}
@@ -350,20 +353,20 @@ public class GameManager : MonoBehaviour {
 			foreach (KeyValuePair<int,string> kvp in ((TileClass)gameB[players[activeBot-1].onTile()]).messages[activeBot-1]) {
 				if (players[activeBot-1].level >= kvp.Key){
 					if (!curTile.msgsRead[activeBot-1].ContainsKey(kvp.Key)){
-						curTile.msgsRead[activeBot-1].Add(kvp.Key,Time.time);
+						curTile.msgsRead[activeBot-1].Add(kvp.Key,true);
 						if (!messagesDisplay[activeBot-1].ContainsKey(kvp.Value))
-							messagesDisplay[activeBot-1].Add(kvp.Value, Time.time);
+							messagesDisplay[activeBot-1].Add(kvp.Value, true);
 					}
 				}
 			}
 		}
 		if (showMessages && messagesDisplay[activeBot-1].Count > 0) {
 			int step = 0;
-			List<KeyValuePair<string,double>> tempVals = new List<KeyValuePair<string, double>>(messagesDisplay[activeBot-1]);
-			foreach (KeyValuePair<string,double> kvp in tempVals) {
-				if (kvp.Value > Time.time-30) {
+			List<KeyValuePair<string,bool>> tempVals = new List<KeyValuePair<string, bool>>(messagesDisplay[activeBot-1]);
+			foreach (KeyValuePair<string,bool> kvp in tempVals) {
+				if (kvp.Value == true) {
 					if (GUI.Button(new Rect(Screen.width-(Screen.width/3)-5,55 + step,290,kvp.Key.Length/2), "")) { 	//Change if text extends past box
-						messagesDisplay[activeBot-1][kvp.Key] = Time.time-30;
+						messagesDisplay[activeBot-1][kvp.Key] = false;
 					}
 					GUI.Label(new Rect(Screen.width-(Screen.width/3),52 + step,290,70), kvp.Key);
 					step += kvp.Key.Length/2;																	//Change if there is overlapping
@@ -632,7 +635,8 @@ public class GameManager : MonoBehaviour {
 			}
 		}
 		if (!messagesDisplay[activeBot-1].ContainsKey("These messages can be removed early by clicking on them. Or turned off from the paused screen."))
-			messagesDisplay[activeBot-1].Add("These messages can be removed early by clicking on them. Or turned off from the paused screen.",Time.time);
+			messagesDisplay[activeBot-1].Add("These messages can be removed early by clicking on them. Or turned off from the paused screen.",true);
+		timeoutCounter = Time.time;
 	}
 	
 	void OnGUI () {
@@ -726,7 +730,7 @@ public class GameManager : MonoBehaviour {
 				// Scan for player interaction. This probably needs updating for different bot abilites.
 				
 				if (Input.GetKeyDown(KeyCode.Space))
-				{	interact();	}
+				{	DoObsReset();	}
 				
 				// Bot selection... eventually this will only be if you have multiple robots active! (Remove comment below)
 				if (!players[activeBot-1].inAction()) {
@@ -776,6 +780,7 @@ public class GameManager : MonoBehaviour {
 			if (Input.GetKeyDown(KeyCode.Escape))
 			{
 				paused = !paused;
+				timeoutCounter = Time.time;
 			}
 		}
 	}
@@ -970,8 +975,7 @@ public class GameManager : MonoBehaviour {
 										}
 										b1.extendDist = b1.extendDist + 10 - mov;
 										if (mov == 0) {
-											b1.grabbed = null;
-											b1.grabbing = false;
+											b1.Release();
 										}
 									} 
 								} 	
@@ -979,6 +983,25 @@ public class GameManager : MonoBehaviour {
 							}
 						}
 					}
+				}
+				if (movement) {
+					timeoutCounter = Time.time;
+				} else if (Time.time > timeoutCounter+TIMEOUT_LIMIT) {
+					//Return to Main Menu
+					paused = false;
+					running = false;
+					selection = false;
+					stageSelect = 0;
+					ClearLevel ();
+				}
+			} else {
+				if (Time.time > timeoutCounter+TIMEOUT_LIMIT*2) {
+					//Return to Main Menu
+					paused = false;
+					running = false;
+					selection = false;
+					stageSelect = 0;
+					ClearLevel ();
 				}
 			}
 		}
@@ -1136,6 +1159,7 @@ public class GameManager : MonoBehaviour {
 	// if so, grab it!
 	
 	private void DoPrimary() {
+		timeoutCounter = Time.time;
 		if (players[activeBot-1].GetType() == typeof(Bot2)) {
 			Tile left1 = FacingTile (true,1);
 			Tile left2 = FacingTile (true,2);
@@ -1201,11 +1225,58 @@ public class GameManager : MonoBehaviour {
 	}
 	
 	private void DoSecondary() {
-		Debug.Log ("Secondary");
+		timeoutCounter = Time.time;
 		if (players[activeBot-1].GetType() == typeof(Bot1)){
 			Bot1 b1 = (Bot1)players[activeBot-1];
 			b1.secondary();
 			
+		}
+	}
+	
+	private void DoObsReset() {
+		timeoutCounter = Time.time;
+		getMyCorners(players[activeBot-1], players[activeBot-1].posX, players[activeBot-1].posY);
+		foreach (Obstacle iob in gameObs) {
+			if (!iob.GetType().IsSubclassOf(typeof(Player))) {
+				switch(players[activeBot-1].currDir) {
+				case 0:
+					getMyCorners (iob,iob.posX,iob.posY+10);
+					if ( players[activeBot-1].upYPos < iob.downYPos && players[activeBot-1].downYPos > iob.upYPos &&
+						players[activeBot-1].leftXPos < iob.rightXPos && players[activeBot-1].rightXPos > iob.leftXPos) {
+						if (TileClear(iob.spawnLoc))
+							players[activeBot-1].ResetTargetObstacle(iob);
+						return;
+					}
+					break;
+				case 1:
+					getMyCorners (iob,iob.posX-10,iob.posY);
+					if ( players[activeBot-1].rightXPos > iob.leftXPos && players[activeBot-1].leftXPos < iob.rightXPos &&
+						players[activeBot-1].upYPos < iob.downYPos && players[activeBot-1].downYPos > iob.upYPos) {
+						if (TileClear(iob.spawnLoc))
+							players[activeBot-1].ResetTargetObstacle(iob);
+						return;
+					}
+					break;
+				case 2:
+					getMyCorners (iob,iob.posX,iob.posY-10);
+					if ( players[activeBot-1].downYPos > iob.upYPos && players[activeBot-1].upYPos < iob.downYPos &&
+						players[activeBot-1].leftXPos < iob.rightXPos && players[activeBot-1].rightXPos > iob.leftXPos) {
+						if (TileClear(iob.spawnLoc))
+							players[activeBot-1].ResetTargetObstacle(iob);
+						return;
+					}
+					break;
+				case 3:
+					getMyCorners (iob,iob.posX+10,iob.posY);
+					if ( players[activeBot-1].leftXPos < iob.rightXPos && players[activeBot-1].rightXPos > iob.leftXPos &&
+						players[activeBot-1].upYPos < iob.downYPos && players[activeBot-1].downYPos > iob.upYPos) {
+						if (TileClear(iob.spawnLoc))
+							players[activeBot-1].ResetTargetObstacle(iob);
+						return;
+					}
+					break;
+				}
+			}
 		}
 	}
 	
@@ -1305,7 +1376,7 @@ public class GameManager : MonoBehaviour {
 	// Move char handles all Obstacle movement. Currently this only means the player, but it is designed to pass a final speed backwards.
 	// This is so that Obstacles can chain movement and reduce speed depending on the number of stacked Obstacles being pushed.
 	
-	private double moveChar(Obstacle tob, double speed, int dirx, int diry)
+	public double moveChar(Obstacle tob, double speed, int dirx, int diry)
 	{
 		
 		double baseSpeed = tob.getSpeed (speed);

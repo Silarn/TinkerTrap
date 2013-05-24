@@ -7,6 +7,7 @@ public abstract class ObstacleClass
 {
 	public double tileX, tileY;
 	public double xPos, yPos;
+
 	public double[] dirTile = new double[4];
 	public double[] dirPos = new double[4];
 	public float xiso, yiso;
@@ -22,6 +23,9 @@ public abstract class ObstacleClass
 	
 	public ObstacleClass (int a, double x, double y)
 	{
+		spawnLoc = "tile_"+x+"_"+y;
+		spawnX = x;
+		spawnY = y;
 		vertL = 0;
 		type = a;
 		if (this.GetType ().IsSubclassOf (typeof(Player)))
@@ -34,8 +38,9 @@ public abstract class ObstacleClass
 			os.animationFrameset = this.GetType ().Name;
 		}
 	}
-	
-	
+	public double spawnX {get; private set; }
+	public double spawnY {get; private set; }
+	public string spawnLoc {get; private set;}
 	public double posX { set { xPos = value; } get { return xPos; } }
 	public double posY { set { yPos = value; } get { return yPos; } }
 	public double xtile { set { tileX = value; } get { return tileX; } }
