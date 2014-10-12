@@ -12,6 +12,13 @@ Thumbs.db
 
 Library/metadata/
 
+Library/*.log
+Library/AssetServerCache*
+Library/ScriptMapper
+Library/ShaderCache.db
+Library/assetDatabase3
+Library/guidmapper
+
 *.mdb
 
 *.dll
