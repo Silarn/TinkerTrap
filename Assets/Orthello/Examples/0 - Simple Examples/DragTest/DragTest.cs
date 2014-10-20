@@ -4,9 +4,13 @@ using System.Collections;
 public class DragTest : MonoBehaviour {
 	
 	OTSprite sprite;
+	DragTestMain main;
 	
 	// Use this for initialization
 	void Start () {
+		
+		main = Camera.main.GetComponent<DragTestMain>();
+		
 		GameObject.Find("DragStart").renderer.enabled = false;
 		GameObject.Find("Dragging").renderer.enabled = false;
 		GameObject.Find("DragEnd").renderer.enabled = false;				
@@ -70,9 +74,22 @@ public class DragTest : MonoBehaviour {
 	void DragEnd(OTObject owner)
 	{
 		GameObject.Find("DragEnd").renderer.enabled = true;		
+		
+		if (main.onlyOnPurple)
+		{
+			if (owner.dropTarget==null || owner.dropTarget.name!="draggable sprite purple")
+			{
+				// invalidate this drop by setting target to null
+				owner.dropTarget = null;
+				return;
+			}			
+		}		
+		
 		if (owner.dropTarget!=null)
+		{
 			GameObject.Find("DragEnd").GetComponent<TextMesh>().text = 
 				"Drag Ended - dropped on "+owner.dropTarget.name;
+		}
 		else
 			GameObject.Find("DragEnd").GetComponent<TextMesh>().text = 
 				"Drag Ended";
@@ -89,7 +106,14 @@ public class DragTest : MonoBehaviour {
 						
 	}
 	void ReceiveDrop(OTObject owner)
-	{
+	{		
+		if (main.lockPurple && sprite.name=="draggable sprite purple")
+		{
+			// invalidate this drop by setting target to null
+			owner.dropTarget = null;
+			return;
+		}		
+				
 		GameObject.Find("Dragging").GetComponent<TextMesh>().text = 
 			owner.name+" received drop from "+owner.dropTarget.name;
 		OTDebug.Message(GameObject.Find("Dragging").GetComponent<TextMesh>().text);						
