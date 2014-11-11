@@ -52,16 +52,12 @@ public abstract class Player : ObstacleClass, Obstacle
 		switch (a) {
 		default:
 			return "UpRt";
-			break;
 		case 1:
 			return "DnRt";
-			break;
 		case 2:
 			return "DnLft";
-			break;
 		case 3:
 			return "UpLft";
-			break;
 		}
 	}
 	

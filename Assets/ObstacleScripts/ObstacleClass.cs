@@ -125,13 +125,13 @@ public abstract class ObstacleClass
 		setPos();
 	}
 	
-	public void setX (double x)
+	public virtual void setX (double x)
 	{
 		xPos = x;
 		setPos();
 	}
 
-	public void setY (double y)
+	public virtual void setY (double y)
 	{
 		yPos = y;
 		setPos();
