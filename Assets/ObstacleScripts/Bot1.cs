@@ -80,6 +80,11 @@ public class Bot1 : Player, Obstacle
 			}
 		}	
 	}
+	public override void ResetTargetObstacle(Obstacle ob) {
+		if (grabbing) { 
+			Release();	}
+		base.ResetTargetObstacle(ob);
+	}
 	
 	public void secondary () {
 		if (level > 0){

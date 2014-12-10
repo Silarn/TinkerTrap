@@ -122,6 +122,7 @@ public class OTSound
 {
 	public float time = 0;
 	public int tick = 0;
+	public AudioSource source;
 
 	// sound settings
 	int	  count = 1;
@@ -132,7 +133,6 @@ public class OTSound
 	
 	// private attributes
 	OTSoundClip soundClip;
-	AudioSource source;
 	GameObject gameObject = null;
 	bool firstPlay = true;
 
@@ -232,6 +232,15 @@ public class OTSound
 	}
 	
 	/// <summary>
+	/// Create a new OTSound object from the passed sound names
+	/// </summary>
+	public static OTSound RandomSound(string[] sounds)
+	{
+		int s = Random.Range(0,sounds.Length);
+		return new OTSound(sounds[s]);		
+	}
+		
+	/// <summary>
 	/// Instantiates a new sound of type 'name'
 	/// </summary>
 	public OTSound(string name)
@@ -239,6 +248,20 @@ public class OTSound
 		_name = name.ToLower();
 		if (OTSounds.instance.lookup.ContainsKey(_name))
 			 soundClip = OTSounds.instance.lookup[_name];	
+		
+		if (soundClip == null)
+		{
+			AudioClip audio = Resources.Load("sounds/"+_name, typeof(AudioClip)) as AudioClip;
+			if (audio==null) audio = Resources.Load("Sounds/"+_name, typeof(AudioClip)) as AudioClip;
+			if (audio!=null)
+			{
+				soundClip = new OTSoundClip();
+				soundClip.name = _name;
+				soundClip.clip = audio;
+				System.Array.Resize<OTSoundClip>(ref OTSounds.instance.soundClips,OTSounds.instance.soundClips.Length+1);
+				OTSounds.instance.soundClips[OTSounds.instance.soundClips.Length-1] = soundClip;
+			}
+		}		
 		
 		if (soundClip !=null)
 			InitSound();
@@ -396,9 +419,10 @@ public class OTSound
 	/// <summary>
 	/// Sets this sound in idle state
 	/// </summary>
-	public void Idle()
+	public OTSound Idle()
 	{
 		_boolMessage(MessageType.Destroy);
+		return this;
 	}
 	
 	/// <summary>

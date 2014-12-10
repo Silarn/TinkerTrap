@@ -32,7 +32,38 @@ public class CExample7 : MonoBehaviour
         OTEasing.SineOut,
         OTEasing.Linear,
     };
-
+	
+	
+	void Start() {
+		
+		TextMesh tPingPong = GameObject.Find("ping-pong").GetComponent<TextMesh>();
+		TextMesh tPlayed = GameObject.Find("count").GetComponent<TextMesh>();		
+		
+		// set green star looping ping pong tween
+		new OTTween(OT.Sprite("star-pingpong"),2,OTEasing.Linear).
+			TweenAdd("position",new Vector2(500,0),OTEasing.StrongInOut, OTEasing.StrongInOut).PingPong().Loop().
+				OnPing(delegate(OTTween tween){
+						tPingPong.text = "PING";
+					}).
+				OnPong(delegate(OTTween tween){
+						tPingPong.text = "PONG";
+					});
+		
+		// set orange star moving 5 times using an add tween
+		new OTTween(OT.Sprite("star-moving"),.5f,OTEasing.Linear).
+			TweenAdd("position",new Vector2(100f,0),OTEasing.StrongIn).PlayCount(5).
+				OnPlayed(delegate(OTTween tween){
+						tPlayed.text = ""+tween.played;
+					}).
+				OnFinish(delegate(OTTween tween){
+					// after it finishes, wait 2 seconds and restart the tween
+					OT.Execute(2, delegate() {
+						  tPlayed.text = "";
+						  tween.Restart();
+						});
+					});
+	}
+	
 	// Update is called once per frame
 	void Update () {
         if (time == 0)

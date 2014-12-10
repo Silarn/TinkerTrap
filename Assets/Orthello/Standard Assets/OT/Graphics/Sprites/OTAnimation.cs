@@ -219,32 +219,39 @@ public class OTAnimation : MonoBehaviour
         }
     }
 	
-	
-	protected void Awake()
+	protected void CheckModifications()
 	{
 #if UNITY_EDITOR
 		if (!Application.isPlaying)
-			UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(this);
-#endif				
+		{
+			
+				UnityEditor.PropertyModification[] modifications = UnityEditor.PrefabUtility.GetPropertyModifications(this);
+				if (modifications!=null && modifications.Length>0)
+					UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(this);						
+		}
+#endif
+	}
+	
+	
+	protected void Awake()
+	{
+        if (name == "")
+            _name = "Animation (id=" + this.gameObject.GetInstanceID() + ")";
+        _duration_ = _duration;
+        _fps_ = _fps;
+        _name_ = name;
+		
+        RegisterAnimation();
+		CheckModifications();
+		
 	}
 
 	
     // Use this for initialization
     void Start()
     {
-        _duration_ = _duration;
-        _fps_ = _fps;
-
-        _name_ = name;
-        if (name == "")
-		{
-            name = "Animation (id=" + this.gameObject.GetInstanceID() + ")";
-#if UNITY_EDITOR
-		if (!Application.isPlaying)
-			UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(this);
-#endif							
-		}
-        RegisterAnimation();
+		if (gameObject.name!= name)
+			gameObject.name = name;
     }
 
     
@@ -293,11 +300,7 @@ public class OTAnimation : MonoBehaviour
             name = gameObject.name;
             OT.RegisterAnimationLookup(this, _name_);
             _name_ = name;
-#if UNITY_EDITOR
-			if (!Application.isPlaying)
-				UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(this);
-#endif		
-			
+			CheckModifications();			
         }
     }
 
@@ -309,7 +312,13 @@ public class OTAnimation : MonoBehaviour
             for (int f = 0; f < framesets.Length; f++)
             {
                 OTAnimationFrameset fs = framesets[f];
-                if (fs.container != null && !fs.container.isReady) _isReady = false;
+                if (fs.container != null)
+				{
+					if (fs.container.texture == null)
+						continue;
+					else
+					  if (!fs.container.isReady) _isReady = false;
+				}
             }
         }
         return _isReady;
@@ -435,8 +444,11 @@ public class OTAnimation : MonoBehaviour
 			{
 	            frames = GetFrames();
 	            dirtyAnimation = false;
-	            _fps = frames.Length / _duration;
-	            _fps_ = _fps;
+				if (_duration == _duration_)
+				{
+                    _duration = (float)frames.Length / _fps;
+                    _duration_ = _duration;
+				}
 			}
         }
 
@@ -447,7 +459,7 @@ public class OTAnimation : MonoBehaviour
                 if (_duration_ != _duration)
                 {
                     _duration_ = _duration;
-                    _fps = frames.Length / _duration;
+                    _fps = (float)frames.Length / _duration;
                     _fps_ = _fps;
                 }
             }
@@ -457,7 +469,7 @@ public class OTAnimation : MonoBehaviour
                 if (_fps_ != _fps)
                 {
                     _fps_ = _fps;
-                    _duration = frames.Length / _fps;
+                    _duration = (float)frames.Length / _fps;
                     _duration_ = _duration;
                 }
             }

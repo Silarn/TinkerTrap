@@ -15,7 +15,7 @@ public abstract class TileClass : Tile
 	public int gridx, gridy;
 	public GameObject gfx;
 	public List<Dictionary<int, string>> messages = new List<Dictionary<int, string>>(3);
-	public List<Dictionary<int, double>> msgsRead = new List<Dictionary<int, double>>(3);
+	public List<Dictionary<int, bool>> msgsRead = new List<Dictionary<int, bool>>(3);
 	
 	protected int tileSet;
 	protected OTAnimatingSprite os;
@@ -40,9 +40,9 @@ public abstract class TileClass : Tile
 		messages.Add(new Dictionary<int, string>() );
 		messages.Add(new Dictionary<int, string>() );
 		messages.Add(new Dictionary<int, string>() );
-		msgsRead.Add(new Dictionary<int, double>() );
-		msgsRead.Add(new Dictionary<int, double>() );
-		msgsRead.Add(new Dictionary<int, double>() );
+		msgsRead.Add(new Dictionary<int, bool>() );
+		msgsRead.Add(new Dictionary<int, bool>() );
+		msgsRead.Add(new Dictionary<int, bool>() );
 		if (walkable())
 			os.depth = 1;
 	}

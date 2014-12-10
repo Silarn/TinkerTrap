@@ -52,16 +52,12 @@ public abstract class Player : ObstacleClass, Obstacle
 		switch (a) {
 		default:
 			return "UpRt";
-			break;
 		case 1:
 			return "DnRt";
-			break;
 		case 2:
 			return "DnLft";
-			break;
 		case 3:
 			return "UpLft";
-			break;
 		}
 	}
 	
@@ -70,6 +66,10 @@ public abstract class Player : ObstacleClass, Obstacle
 	{
 		this.primary(a);
 	}
+	public virtual void ResetTargetObstacle(Obstacle ob) {
+		ob.setXY(ob.spawnX,ob.spawnY);
+	}
+	
 	// ADD: Method to determine coordinates, currently in GameManager.moveChar
 	// ADD: Method to determine coordinate area to perform a turn.
 	

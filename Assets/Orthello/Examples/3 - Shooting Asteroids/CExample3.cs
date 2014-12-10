@@ -18,58 +18,41 @@ using System.Collections;
 public class CExample3 : MonoBehaviour {
 
     // sprite prototypes that will be used when creating objects
-    
-    public OTSprite bullet;             
-    // the asteroid prototypes will be de-activated on start
-    
-    public OTAnimatingSprite a1;
-    
-    public OTAnimatingSprite a2;
-    
-    public OTAnimatingSprite a3;
 
     OTAnimatingSprite gun;              // gun sprite reference
     bool initialized = false;           // initialization notifier
-
-    void Awake()
-    {		
-		// lets create all sprites passive
-		//OT.Passify();
-		
-        // By de-acivating a gameobject is becomes invisible but can still
-        // be used them to instantiate copies.
-    }
 
     int dp = 100;
     // This method will create an asteroid at a random position on screen and with
     // relative min/max (0-1) size. An OTObject can be provided to act as a base to 
     // determine the new size.
     OTAnimatingSprite RandomBlock(Rect r, float min, float max, OTObject o)
-    {
+    {		
         // Determine random 1-3 asteroid type
         int t = 1 + (int)Mathf.Floor(Random.value * 3);
         // Determine random size modifier (min-max)
         float s = min + Random.value * (max - min);
-        GameObject g = null;
+		OTSprite sprite = null;
         // Create a new asteroid
         switch (t)
         {
-            case 1: g = OT.CreateObject("asteroid1");
+            case 1: sprite = OT.CreateSprite("asteroid1");
                 break;
-            case 2: g = OT.CreateObject("asteroid2");
+            case 2: sprite = OT.CreateSprite("asteroid2");
                 break;
-            case 3: g = OT.CreateObject("asteroid3");
+            case 3: sprite = OT.CreateSprite("asteroid3");
                 break;
         }
-        if (g != null)
+		// big blocks start invisible and will be faded.
+		if (o == null)
+			sprite.alpha = 0;
+        if (sprite != null)
         {
-            // Find this new asteroid's animating sprite
-            OTAnimatingSprite sprite = g.GetComponent<OTAnimatingSprite>();
-            // If a base object was provided use it for size scaling
-            if (o != null)
-                sprite.size = o.size * s;
-            else
-                sprite.size = sprite.size * s;
+            // Set sprite's size
+	        if (o != null)
+	            sprite.size = o.size * s;
+	        else
+	            sprite.size = sprite.size * s;
             // Set sprite's random position
             sprite.position = new Vector2(r.xMin + Random.value * r.width, r.yMin + Random.value * r.height);
             // Set sprote's random rotation
@@ -77,21 +60,22 @@ public class CExample3 : MonoBehaviour {
             // Set sprite's name
             sprite.depth = dp++;
             if (dp > 750) dp = 100;
-            // Return new sprite
-			sprite.enabled = true;
-            return sprite;
         }
-        // we did not manage to create a sprite/asteroid
-        return null;
+		
+		// fade in the (big) asteroid
+		if (o == null)
+			new OTTween(sprite,0.75f,OTEasing.Linear).Wait(Random.value * 1).Tween("alpha",0,1);
+		
+        return sprite as OTAnimatingSprite;
     }
     
 
     // Create objects for this application
     void CreateObjectPools()
     {
-		OT.PreFabricate("asteroid1",250);
-		OT.PreFabricate("asteroid2",250);
-		OT.PreFabricate("asteroid3",250);		
+		//OT.PreFabricate("asteroid1",250);
+		//OT.PreFabricate("asteroid2",250);
+		//OT.PreFabricate("asteroid3",250);		
     }
 
     // application initialization
@@ -99,14 +83,13 @@ public class CExample3 : MonoBehaviour {
     {
         // Get reference to gun animation sprite
         gun = OT.ObjectByName("gun") as OTAnimatingSprite;
+		
         // Set gun animation finish delegate
         // HINT : We could use sprite.InitCallBacks(this) as well.
         // but because delegates are the C# way we will use this technique
         gun.onAnimationFinish = OnAnimationFinish;
-        // Create our object pool if we want.
-        OT.objectPooling = true;
-        if (OT.objectPooling)
-            CreateObjectPools();
+		
+        CreateObjectPools();
         // set our initialization notifier - we only want to initialize once
         initialized = true;
     }
@@ -147,6 +130,7 @@ public class CExample3 : MonoBehaviour {
     
 	// Update is called once per frame
 	void Update () {
+		
         // only go one if Orthello is initialized
         if (!OT.isValid) return;
 
@@ -157,13 +141,12 @@ public class CExample3 : MonoBehaviour {
             Initialize();
             return;
         }
-
         // Rotate the gun animation sprite towards the mouse on screen
         gun.RotateTowards(OT.view.mouseWorldPosition);
         // Rotate our bullet prototype as well so we will instantiate a
         // 'already rotated' bullet when we shoot
-        bullet.rotation = gun.rotation;
-
+		
+		
         // check if the left mouse button was clicked
         if (Input.GetMouseButtonDown(0))
         {
@@ -171,13 +154,14 @@ public class CExample3 : MonoBehaviour {
             OTSprite nBullet = OT.CreateSprite("bullet");
             // Set bullet's position at approximately the gun's shooting barrel
             nBullet.position = gun.position + (gun.yVector * (gun.size.y / 2));
+        	nBullet.rotation = gun.rotation;
             // Play the gun's shooting animation frameset once
             gun.PlayOnce("shoot");
         }
 
-        // If we have less than 15 objects within Orthello we will create a random asteroid
+        //If we have less than 15 objects within Orthello we will create a random asteroid
         if (OT.objectCount <= 15)
-            RandomBlock(OT.view.worldRect, 0.6f, 1.2f, null);        
+           RandomBlock(OT.view.worldRect, 0.6f, 1.2f, null);        
 	}
 
     // The OnAnimationFinish delegate will be called when an animation or animation frameset

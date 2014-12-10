@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using System.Xml;
 using System.IO;
 
 /// <summary>
@@ -44,7 +43,9 @@ public class OTSpriteAtlasCocos2DFnt : OTSpriteAtlasImportText
 					if (lineHeight == 0)
 					{
 						lineHeight = System.Convert.ToInt16(Data ("lineHeight"));
-					}					
+					}
+					if (Data("scaleW")!="")
+						sheetSize = new Vector2(System.Convert.ToSingle(Data ("scaleW")),System.Convert.ToSingle(Data ("scaleH")));
 				}
 				
 				if (Exists ("char"))
