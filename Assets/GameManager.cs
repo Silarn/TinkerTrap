@@ -31,7 +31,8 @@ public class GameManager : MonoBehaviour {
 	private List<Dictionary<string, double>> messagesDisplay = new List<Dictionary<string, double>>(3);
 	
 	private bool playIntro = true;
-	private float introLoc = 0;
+	private float introLoc = Screen.width;
+	private float timeTracker;
 	private float vicTime;
 	private bool running = false;
 	private bool selection = false;
@@ -59,6 +60,7 @@ public class GameManager : MonoBehaviour {
 	
 	void Start () {
 		Time.fixedDeltaTime = 1/30f;
+		timeTracker = Time.time;
 		players.Add (new Bot1()); // Webelo (Red, Lifter)
 		players.Add (new Bot2()); // Hob (Yellow, Hoverer)
 		players.Add (new Bot3()); // Hisco (Green, Wheelie)
@@ -627,12 +629,13 @@ public class GameManager : MonoBehaviour {
 	
 	void OnGUI () {
 		if (playIntro && introLoc > -810*7) {
-			introLoc-=1;
+			introLoc-=(Time.time-timeTracker)*120;
+			timeTracker = Time.time;
 			GUI.BeginGroup (new Rect(0, 0, Screen.width, Screen.height));
 			for (int i = 0; i < introImages.Length; i++) {
 				GUI.DrawTexture (new Rect(introLoc+810*i, Screen.height/2-300, 800, 600), introImages[i]);
 			}
-			GUI.Box (new Rect(Screen.width/2, 0, 200,30), "Hit Esc or Spacebar to Skip");
+			GUI.Box (new Rect(Screen.width/2-100, 0, 200,30), "Hit Esc or Spacebar to Skip");
 			GUI.EndGroup ();
 			if (Input.GetKey (KeyCode.Escape) || Input.GetKey (KeyCode.Space))
 				playIntro = false;
